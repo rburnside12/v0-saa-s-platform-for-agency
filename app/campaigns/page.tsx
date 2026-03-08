@@ -290,11 +290,15 @@ export default function CampaignsPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="bg-card border-border w-36">
-                            <DropdownMenuItem className="text-xs gap-2">
-                              <ArrowUpRight size={12} /> Open
+                            <DropdownMenuItem asChild className="text-xs gap-2">
+                              <Link href={`/campaign/${c.id}`}>
+                                <ArrowUpRight size={12} /> Open
+                              </Link>
                             </DropdownMenuItem>
-                            <DropdownMenuItem className="text-xs gap-2">
-                              <BarChart2 size={12} /> Analytics
+                            <DropdownMenuItem asChild className="text-xs gap-2">
+                              <Link href={`/analytics?campaigns=${c.id}`}>
+                                <BarChart2 size={12} /> Analytics
+                              </Link>
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>

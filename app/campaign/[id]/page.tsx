@@ -18,6 +18,7 @@ import {
   Eye,
   EyeOff,
   ArrowLeft,
+  BarChart2,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
@@ -375,6 +376,11 @@ export default function CampaignDashboard({ params }: { params: { id: string } }
               <p className="text-xs text-muted-foreground mt-0.5">Jan 15 – Mar 31, 2025 · 24 Deliverables · Managed by Sarah K.</p>
             </div>
             <div className="flex items-center gap-2 shrink-0">
+              <Link href={`/analytics?campaigns=${params.id}`}>
+                <Button variant="outline" size="sm" className="h-7 text-xs border-border gap-1.5">
+                  <BarChart2 size={12} /> Analytics
+                </Button>
+              </Link>
               <Button variant="outline" size="sm" className="h-7 text-xs border-border gap-1.5">
                 <Sliders size={12} /> Configure
               </Button>

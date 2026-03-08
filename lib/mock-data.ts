@@ -214,17 +214,103 @@ export const MOCK_INFLUENCERS = [
   },
 ]
 
+// Per-campaign analytics data keyed by campaign ID
+export const MOCK_CAMPAIGN_ANALYTICS: Record<string, {
+  viewsOverTime: Array<{ date: string; views: number; target: number }>;
+  byPlatform: Array<{ platform: string; views: number; color: string }>;
+  byContentType: Array<{ type: string; views: number; color: string }>;
+  topPerformers: Array<{ creator: string; platform: string; views: number; er: number; ccv?: number; badge: string }>;
+}> = {
+  'epic-games-q1': {
+    viewsOverTime: [
+      { date: 'Jan 15', views: 2100000, target: 2500000 },
+      { date: 'Jan 22', views: 5400000, target: 5000000 },
+      { date: 'Jan 29', views: 9800000, target: 9000000 },
+      { date: 'Feb 5', views: 14200000, target: 13000000 },
+      { date: 'Feb 12', views: 20500000, target: 18000000 },
+      { date: 'Feb 19', views: 28100000, target: 25000000 },
+      { date: 'Feb 26', views: 36800000, target: 33000000 },
+      { date: 'Mar 5', views: 48200000, target: 42000000 },
+    ],
+    byPlatform: [
+      { platform: 'YouTube', views: 22800000, color: '#FF0000' },
+      { platform: 'Twitch', views: 14200000, color: '#9146FF' },
+      { platform: 'TikTok', views: 8400000, color: '#69C9D0' },
+    ],
+    byContentType: [
+      { type: 'Dedicated Video', views: 22800000, color: 'hsl(var(--chart-1))' },
+      { type: 'Dedicated Stream', views: 14200000, color: 'hsl(var(--chart-3))' },
+      { type: 'Sponsorship', views: 8400000, color: 'hsl(var(--chart-2))' },
+      { type: 'Short Form', views: 2800000, color: 'hsl(var(--chart-4))' },
+    ],
+    topPerformers: [
+      { creator: '@SypherPK', platform: 'YouTube', views: 2800000, er: 5.4, badge: 'Dedicated Video' },
+      { creator: '@Ninja', platform: 'Twitch', views: 0, er: 0, ccv: 38000, badge: 'Dedicated Stream' },
+      { creator: '@Clix', platform: 'TikTok', views: 8400000, er: 7.8, badge: 'Sponsorship' },
+      { creator: '@Nickmercs', platform: 'Twitch', views: 0, er: 0, ccv: 28000, badge: 'Dedicated Stream' },
+    ],
+  },
+  'riot-games-val': {
+    viewsOverTime: [
+      { date: 'Feb 1', views: 1800000, target: 1500000 },
+      { date: 'Feb 8', views: 5200000, target: 4500000 },
+      { date: 'Feb 15', views: 9400000, target: 8500000 },
+      { date: 'Feb 22', views: 14800000, target: 13000000 },
+      { date: 'Mar 1', views: 18600000, target: 17000000 },
+      { date: 'Mar 8', views: 22100000, target: 20000000 },
+    ],
+    byPlatform: [
+      { platform: 'YouTube', views: 12400000, color: '#FF0000' },
+      { platform: 'Twitch', views: 8200000, color: '#9146FF' },
+      { platform: 'X', views: 1500000, color: '#FFFFFF' },
+    ],
+    byContentType: [
+      { type: 'Dedicated Video', views: 10200000, color: 'hsl(var(--chart-1))' },
+      { type: 'Dedicated Stream', views: 8200000, color: 'hsl(var(--chart-3))' },
+      { type: 'Sponsorship', views: 3700000, color: 'hsl(var(--chart-2))' },
+    ],
+    topPerformers: [
+      { creator: '@TenZ', platform: 'YouTube', views: 3200000, er: 6.1, badge: 'Dedicated Video' },
+      { creator: '@Shroud', platform: 'Twitch', views: 0, er: 0, ccv: 42000, badge: 'Dedicated Stream' },
+      { creator: '@Tarik', platform: 'Twitch', views: 0, er: 0, ccv: 35000, badge: 'Dedicated Stream' },
+    ],
+  },
+  'nike-spring': {
+    viewsOverTime: [
+      { date: 'Dec 1', views: 2800000, target: 3000000 },
+      { date: 'Dec 15', views: 8100000, target: 7500000 },
+      { date: 'Jan 1', views: 14500000, target: 13000000 },
+      { date: 'Jan 15', views: 20200000, target: 18500000 },
+      { date: 'Feb 1', views: 26800000, target: 25000000 },
+      { date: 'Feb 15', views: 31500000, target: 30000000 },
+    ],
+    byPlatform: [
+      { platform: 'Instagram', views: 14200000, color: '#E1306C' },
+      { platform: 'TikTok', views: 12800000, color: '#69C9D0' },
+      { platform: 'YouTube', views: 4500000, color: '#FF0000' },
+    ],
+    byContentType: [
+      { type: 'Sponsorship', views: 18200000, color: 'hsl(var(--chart-2))' },
+      { type: 'Short Form', views: 9800000, color: 'hsl(var(--chart-4))' },
+      { type: 'Dedicated Video', views: 3500000, color: 'hsl(var(--chart-1))' },
+    ],
+    topPerformers: [
+      { creator: '@EmmaChamberlain', platform: 'Instagram', views: 4200000, er: 4.8, badge: 'Sponsorship' },
+      { creator: '@CharliDAmelio', platform: 'TikTok', views: 8900000, er: 5.2, badge: 'Short Form' },
+      { creator: '@AddyRae', platform: 'TikTok', views: 6200000, er: 4.6, badge: 'Short Form' },
+    ],
+  },
+  'amd-radeon': {
+    viewsOverTime: [],
+    byPlatform: [],
+    byContentType: [],
+    topPerformers: [],
+  },
+}
+
+// Legacy aggregate for backwards compatibility
 export const MOCK_ANALYTICS = {
-  viewsOverTime: [
-    { date: 'Jan 15', views: 2100000, target: 2500000 },
-    { date: 'Jan 22', views: 5400000, target: 5000000 },
-    { date: 'Jan 29', views: 9800000, target: 9000000 },
-    { date: 'Feb 5', views: 14200000, target: 13000000 },
-    { date: 'Feb 12', views: 20500000, target: 18000000 },
-    { date: 'Feb 19', views: 28100000, target: 25000000 },
-    { date: 'Feb 26', views: 36800000, target: 33000000 },
-    { date: 'Mar 5', views: 48200000, target: 42000000 },
-  ],
+  viewsOverTime: MOCK_CAMPAIGN_ANALYTICS['epic-games-q1'].viewsOverTime,
   byPlatform: [
     { platform: 'YouTube', views: 22800000, color: '#FF0000' },
     { platform: 'Twitch', views: 14200000, color: '#9146FF' },
