@@ -23,6 +23,7 @@ import {
   Zap,
   Sun,
   Moon,
+  Home,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { usePresentationMode } from '@/contexts/presentation-mode'
@@ -49,6 +50,7 @@ import { Switch } from '@/components/ui/switch'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 
 const navItems = [
+  { href: '/landing', label: 'Landing Page', icon: Home },
   { href: '/', label: 'Overview', icon: LayoutDashboard },
   { href: '/campaigns', label: 'Campaigns', icon: Megaphone },
   { href: '/campaign/epic-games-q1', label: 'Campaign Dashboard', icon: Zap },

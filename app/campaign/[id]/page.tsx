@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { AppShell } from '@/components/app-shell'
 import { MOCK_DELIVERABLES, MOCK_CAMPAIGN_ANALYTICS } from '@/lib/mock-data'
 import { usePresentationMode } from '@/contexts/presentation-mode'
@@ -15,16 +15,14 @@ import {
   PieChart,
   Pie,
   Cell,
+  BarChart,
+  Bar,
 } from 'recharts'
 import {
-  Upload,
   CheckCircle,
-  AlertCircle,
   Plus,
-  Sliders,
   ChevronDown,
   ExternalLink,
-  Info,
   MoreHorizontal,
   Trash2,
   ArrowLeft,
@@ -32,11 +30,14 @@ import {
   FileSpreadsheet,
   Settings,
   Eye,
-  Clock,
   TrendingUp,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
+  FileText,
+  Download,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import {
   Tooltip,
@@ -68,7 +69,6 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
-import { Switch } from '@/components/ui/switch'
 import Link from 'next/link'
 
 // Platform icons as simple SVGs
@@ -136,13 +136,14 @@ const CONTENT_TYPES = [
   'Short Form (TikTok/Reel)',
   'Live Stream Overlay',
   'Twitter Thread',
-  '+ Add New',
 ]
 
-// Pie chart colors
-const PIE_COLORS = ['#FF0000', '#69C9D0', '#9146FF', '#E1306C', '#1DA1F2']
+// Pie chart colors - distinct colors
+const PIE_COLORS = ['#ef4444', '#06b6d4', '#a855f7', '#22c55e', '#f97316']
 
 type Deliverable = typeof MOCK_DELIVERABLES[0]
+type SortKey = 'creator' | 'platform' | 'contentType' | 'views' | 'likes' | 'comments' | 'shares' | 'er' | 'internalPrice' | 'clientPrice'
+type SortDir = 'asc' | 'desc'
 
 const formatM = (v: number) => {
   if (v >= 1000000) return `${(v / 1000000).toFixed(1)}M`
@@ -166,82 +167,14 @@ function PlatformIcon({ platform, size = 14 }: { platform: string; size?: number
   )
 }
 
-function MetricCell({ value, suffix = '', className = '' }: { value: number | null | undefined; suffix?: string; className?: string }) {
-  if (value == null) return <span className="text-muted-foreground/40">—</span>
+function MetricCell({ value, className = '' }: { value: number | null | undefined; className?: string }) {
+  if (value == null || value === 0) return <span className="text-muted-foreground/40">—</span>
   const formatted = value >= 1000000
     ? `${(value / 1000000).toFixed(2)}M`
     : value >= 1000
     ? `${(value / 1000).toFixed(1)}K`
     : value.toLocaleString()
-  return <span className={`font-mono tabular-nums ${className}`}>{formatted}{suffix}</span>
-}
-
-function ProgressBar({ current, target }: { current: number; target: number }) {
-  const pct = target > 0 ? Math.min((current / target) * 100, 100) : 0
-  const isOver = current > target
-  return (
-    <div className="flex items-center gap-2">
-      <div className="flex-1 h-1.5 bg-secondary rounded-full overflow-hidden min-w-[60px]">
-        <div 
-          className={`h-full rounded-full transition-all ${isOver ? 'bg-emerald-400' : 'bg-primary'}`}
-          style={{ width: `${pct}%` }}
-        />
-      </div>
-      <span className={`text-[10px] font-mono tabular-nums ${isOver ? 'text-emerald-400' : 'text-muted-foreground'}`}>
-        {pct.toFixed(0)}%
-      </span>
-    </div>
-  )
-}
-
-function ImportArea({ onImport }: { onImport: (links: string[]) => void }) {
-  const [text, setText] = useState('')
-  const [status, setStatus] = useState<'idle' | 'validating' | 'done'>('idle')
-
-  function handleValidate() {
-    setStatus('validating')
-    setTimeout(() => {
-      const links = text.split('\n').filter(l => l.trim())
-      onImport(links)
-      setStatus('done')
-    }, 800)
-  }
-
-  return (
-    <div className="bg-card border border-border rounded-lg p-4 space-y-3">
-      <div className="flex items-center gap-2">
-        <Upload size={14} className="text-primary" />
-        <span className="text-sm font-medium text-foreground">Bulk Import Deliverables</span>
-        <span className="text-xs text-muted-foreground">— Paste social media links, one per line</span>
-      </div>
-      <Textarea
-        placeholder={`https://youtube.com/watch?v=...\nhttps://tiktok.com/@creator/video/...\nhttps://twitch.tv/creator`}
-        value={text}
-        onChange={e => setText(e.target.value)}
-        className="min-h-24 text-xs bg-secondary border-border placeholder:text-muted-foreground/50 font-mono resize-none"
-      />
-      <div className="flex items-center gap-2">
-        <Button
-          size="sm"
-          onClick={handleValidate}
-          disabled={!text.trim() || status === 'validating'}
-          className="bg-primary text-primary-foreground text-xs h-7 gap-1.5"
-        >
-          {status === 'validating' ? (
-            <><span className="animate-spin">◌</span> Validating...</>
-          ) : (
-            <><CheckCircle size={12} /> Validate & Extract</>
-          )}
-        </Button>
-        {status === 'done' && (
-          <div className="flex items-center gap-1.5 text-xs text-emerald-400">
-            <CheckCircle size={12} />
-            {text.split('\n').filter(l => l.trim()).length} links detected — ready to extract
-          </div>
-        )}
-      </div>
-    </div>
-  )
+  return <span className={`font-mono tabular-nums ${className}`}>{formatted}</span>
 }
 
 // Custom tooltip for charts
@@ -261,199 +194,144 @@ function CustomChartTooltip({ active, payload, label }: { active?: boolean; payl
   )
 }
 
-function DeliverableRow({
-  row,
-  presentationMode,
-  visibleColumns,
-  onUpdate,
-}: {
-  row: Deliverable
-  presentationMode: boolean
-  visibleColumns: Record<string, boolean>
-  onUpdate: (id: string, field: string, value: unknown) => void
+// Sort header component
+function SortHeader({ 
+  label, 
+  sortKey, 
+  currentSort, 
+  currentDir, 
+  onSort,
+  align = 'left' 
+}: { 
+  label: string
+  sortKey: SortKey
+  currentSort: SortKey
+  currentDir: SortDir
+  onSort: (key: SortKey) => void
+  align?: 'left' | 'right' | 'center'
 }) {
-  // Conservative 80% multiplier hardcoded
-  const conservativeMultiplier = 0.8
-  const rawViews = row.youtube?.avg30dLong ?? row.tiktok?.views ?? 0
-  const adjViews = Math.round(rawViews * conservativeMultiplier)
-  const targetViews = Math.round(rawViews) // Target is the full expected views
-  const cpm = row.cpm ? `$${row.cpm.toFixed(2)}` : null
-  const profit = row.clientPrice - row.internalPrice
-  const costPerCCV = row.twitch ? (row.internalPrice / row.twitch.avgCCV).toFixed(2) : null
-
+  const isActive = currentSort === sortKey
+  const justifyClass = align === 'right' ? 'justify-end' : align === 'center' ? 'justify-center' : 'justify-start'
+  
   return (
-    <tr className="border-b border-border/50 hover:bg-secondary/20 transition-colors group">
-      {/* Creator with Platform Icon */}
-      <td className="px-3 py-2.5 sticky left-0 bg-card group-hover:bg-secondary/20 z-10 min-w-[160px]">
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
-            <span className="text-primary text-[10px] font-bold">{row.creator.avatar}</span>
-          </div>
-          <div>
-            <div className="text-xs font-medium text-foreground flex items-center gap-1.5">
-              {row.creator.handle}
-              <PlatformIcon platform={row.creator.platform} size={12} />
-            </div>
-          </div>
-        </div>
-      </td>
-
-      {/* Content Type */}
-      <td className="px-2 py-2.5 min-w-[140px]">
-        <Select
-          value={row.contentType}
-          onValueChange={v => onUpdate(row.id, 'contentType', v)}
-        >
-          <SelectTrigger className="h-6 text-[11px] bg-secondary border-border">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent className="bg-card border-border">
-            {CONTENT_TYPES.map(t => (
-              <SelectItem key={t} value={t} className="text-xs">{t}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </td>
-
-      {/* Progress Bar */}
-      <td className="px-3 py-2.5 min-w-[120px]">
-        <ProgressBar current={adjViews} target={targetViews} />
-      </td>
-
-      {/* Conservative Views */}
-      <td className="px-3 py-2.5 text-right text-[11px]">
-        <Tooltip>
-          <TooltipTrigger>
-            <span className="font-mono tabular-nums text-yellow-400"><MetricCell value={adjViews} /></span>
-          </TooltipTrigger>
-          <TooltipContent className="text-xs bg-card border-border">
-            80% conservative estimate applied
-          </TooltipContent>
-        </Tooltip>
-      </td>
-
-      {/* Target Views */}
-      <td className="px-3 py-2.5 text-right text-[11px]">
-        <span className="font-mono tabular-nums text-muted-foreground"><MetricCell value={targetViews} /></span>
-      </td>
-
-      {/* Platform-specific metrics */}
-      {visibleColumns.youtube && (
-        <>
-          <td className="px-3 py-2.5 text-right text-xs border-l border-border/50">
-            {row.youtube ? (
-              <span className="text-red-400 font-mono tabular-nums text-[11px]">
-                <MetricCell value={row.youtube.avg30dLong} />
-              </span>
-            ) : <span className="text-muted-foreground/30">—</span>}
-          </td>
-          <td className="px-3 py-2.5 text-right text-[11px]">
-            {row.youtube ? <span className={`font-mono tabular-nums ${row.youtube.er > 5 ? 'text-emerald-400' : 'text-foreground'}`}>{row.youtube.er}%</span> : <span className="text-muted-foreground/30">—</span>}
-          </td>
-        </>
+    <button 
+      onClick={() => onSort(sortKey)}
+      className={`flex items-center gap-1 ${justifyClass} w-full text-muted-foreground hover:text-foreground transition-colors`}
+    >
+      <span className={isActive ? 'text-primary' : ''}>{label}</span>
+      {isActive ? (
+        currentDir === 'asc' ? <ArrowUp size={10} className="text-primary" /> : <ArrowDown size={10} className="text-primary" />
+      ) : (
+        <ArrowUpDown size={10} className="opacity-40" />
       )}
-
-      {visibleColumns.tiktok && (
-        <>
-          <td className="px-3 py-2.5 text-right text-[11px] border-l border-border/50">
-            {row.tiktok ? <span className="font-mono tabular-nums text-cyan-400"><MetricCell value={row.tiktok.views} /></span> : <span className="text-muted-foreground/30">—</span>}
-          </td>
-          <td className="px-3 py-2.5 text-right text-[11px]">
-            {row.tiktok ? <span className={`font-mono tabular-nums ${row.tiktok.er > 5 ? 'text-emerald-400' : 'text-foreground'}`}>{row.tiktok.er}%</span> : <span className="text-muted-foreground/30">—</span>}
-          </td>
-        </>
-      )}
-
-      {visibleColumns.twitch && (
-        <>
-          <td className="px-3 py-2.5 text-right text-[11px] border-l border-border/50">
-            {row.twitch ? <span className="font-mono tabular-nums text-purple-400"><MetricCell value={row.twitch.avgCCV} /></span> : <span className="text-muted-foreground/30">—</span>}
-          </td>
-          <td className="px-3 py-2.5 text-right text-[11px]">
-            {row.twitch ? <span className="font-mono tabular-nums text-purple-300"><MetricCell value={row.twitch.peakCCV} /></span> : <span className="text-muted-foreground/30">—</span>}
-          </td>
-        </>
-      )}
-
-      {/* Financials */}
-      {!presentationMode && visibleColumns.internalPrice && (
-        <td className="px-3 py-2.5 text-right text-[11px] border-l border-border/50">
-          <span className="font-mono tabular-nums text-foreground">${row.internalPrice.toLocaleString()}</span>
-        </td>
-      )}
-      <td className="px-3 py-2.5 text-right text-[11px]">
-        <span className="font-mono tabular-nums text-foreground">${row.clientPrice.toLocaleString()}</span>
-      </td>
-      {!presentationMode && visibleColumns.profit && (
-        <td className="px-3 py-2.5 text-right text-[11px]">
-          <span className="font-mono tabular-nums text-emerald-400">${profit.toLocaleString()}</span>
-        </td>
-      )}
-      {!presentationMode && visibleColumns.margin && (
-        <td className="px-3 py-2.5 text-right text-[11px]">
-          <span className="font-mono tabular-nums text-emerald-400">{row.margin.toFixed(1)}%</span>
-        </td>
-      )}
-      {visibleColumns.cpm && (
-        <td className="px-3 py-2.5 text-right text-[11px]">
-          {cpm ? <span className="font-mono tabular-nums text-foreground">{cpm}</span> : <span className="text-muted-foreground/30">—</span>}
-        </td>
-      )}
-      {!presentationMode && visibleColumns.costPerCCV && row.twitch && (
-        <td className="px-3 py-2.5 text-right text-[11px]">
-          <span className="font-mono tabular-nums text-purple-300">${costPerCCV}</span>
-        </td>
-      )}
-      {!presentationMode && visibleColumns.costPerCCV && !row.twitch && (
-        <td className="px-3 py-2.5 text-right text-[11px]">
-          <span className="text-muted-foreground/30">—</span>
-        </td>
-      )}
-
-      {/* Actions */}
-      <td className="px-3 py-2.5">
-        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-          <a href="#" className="text-muted-foreground hover:text-foreground">
-            <ExternalLink size={12} />
-          </a>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-5 w-5 p-0 text-muted-foreground hover:text-foreground">
-                <MoreHorizontal size={12} />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="bg-card border-border w-32">
-              <DropdownMenuItem className="text-xs gap-2 text-destructive-foreground">
-                <Trash2 size={11} /> Remove
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </td>
-    </tr>
+    </button>
   )
+}
+
+// Extract views based on platform
+function getViews(row: Deliverable): number {
+  if (row.youtube) return row.youtube.avg30dLong ?? 0
+  if (row.tiktok) return row.tiktok.views ?? 0
+  if (row.twitch) return row.twitch.vodViews ?? 0
+  return 0
+}
+
+function getLikes(row: Deliverable): number {
+  if (row.youtube) return row.youtube.likes ?? 0
+  if (row.tiktok) return row.tiktok.likes ?? 0
+  return 0
+}
+
+function getComments(row: Deliverable): number {
+  if (row.youtube) return row.youtube.comments ?? 0
+  if (row.tiktok) return row.tiktok.comments ?? 0
+  return 0
+}
+
+function getShares(row: Deliverable): number {
+  if (row.tiktok) return row.tiktok.shares ?? 0
+  return 0
+}
+
+function getER(row: Deliverable): number {
+  if (row.youtube) return row.youtube.er ?? 0
+  if (row.tiktok) return row.tiktok.er ?? 0
+  return 0
 }
 
 export default function CampaignDashboard({ params }: { params: { id: string } }) {
   const { presentationMode } = usePresentationMode()
   const [deliverables, setDeliverables] = useState(MOCK_DELIVERABLES)
-  const [activeTab, setActiveTab] = useState<'deliverables' | 'import'>('deliverables')
+  const [activeTab, setActiveTab] = useState<'deliverables' | 'analytics'>('deliverables')
   const [refreshing, setRefreshing] = useState(false)
-  const [showAutoRefreshDialog, setShowAutoRefreshDialog] = useState(false)
-  const [autoRefreshInterval, setAutoRefreshInterval] = useState<'daily' | '6h' | '1h' | 'off'>('off')
+  const [showAddDeliverableModal, setShowAddDeliverableModal] = useState(false)
+  const [sortKey, setSortKey] = useState<SortKey>('creator')
+  const [sortDir, setSortDir] = useState<SortDir>('asc')
   const [visibleColumns, setVisibleColumns] = useState({
-    youtube: true,
-    tiktok: true,
-    twitch: true,
+    platform: true,
+    creator: true,
+    contentType: true,
+    views: true,
+    likes: true,
+    comments: true,
+    shares: true,
+    er: true,
     internalPrice: true,
-    profit: true,
-    margin: true,
+    clientPrice: true,
     cpm: true,
-    costPerCCV: true,
   })
 
   // Get campaign analytics
   const analytics = MOCK_CAMPAIGN_ANALYTICS[params.id] || MOCK_CAMPAIGN_ANALYTICS['epic-games-q1']
+
+  function handleSort(key: SortKey) {
+    if (sortKey === key) {
+      setSortDir(d => d === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortKey(key)
+      setSortDir('asc')
+    }
+  }
+
+  // Sort deliverables
+  const sortedDeliverables = useMemo(() => {
+    return [...deliverables].sort((a, b) => {
+      let cmp = 0
+      switch (sortKey) {
+        case 'creator':
+          cmp = a.creator.handle.localeCompare(b.creator.handle)
+          break
+        case 'platform':
+          cmp = a.creator.platform.localeCompare(b.creator.platform)
+          break
+        case 'contentType':
+          cmp = a.contentType.localeCompare(b.contentType)
+          break
+        case 'views':
+          cmp = getViews(a) - getViews(b)
+          break
+        case 'likes':
+          cmp = getLikes(a) - getLikes(b)
+          break
+        case 'comments':
+          cmp = getComments(a) - getComments(b)
+          break
+        case 'shares':
+          cmp = getShares(a) - getShares(b)
+          break
+        case 'er':
+          cmp = getER(a) - getER(b)
+          break
+        case 'internalPrice':
+          cmp = a.internalPrice - b.internalPrice
+          break
+        case 'clientPrice':
+          cmp = a.clientPrice - b.clientPrice
+          break
+      }
+      return sortDir === 'asc' ? cmp : -cmp
+    })
+  }, [deliverables, sortKey, sortDir])
 
   function updateDeliverable(id: string, field: string, value: unknown) {
     setDeliverables(prev =>
@@ -467,21 +345,26 @@ export default function CampaignDashboard({ params }: { params: { id: string } }
     setRefreshing(false)
   }
 
-  function handleExportToSheets() {
-    // Mock export
-    alert('Exported to Google Sheets!')
-  }
-
+  // Calculate totals
   const totalClientValue = deliverables.reduce((a, d) => a + d.clientPrice, 0)
   const totalInternalCost = deliverables.reduce((a, d) => a + d.internalPrice, 0)
   const totalProfit = totalClientValue - totalInternalCost
   const avgMargin = ((totalProfit / totalClientValue) * 100).toFixed(1)
-  const totalViews = deliverables.reduce((a, d) => {
-    if (d.youtube) return a + (d.youtube.avg30dLong ?? 0)
-    if (d.tiktok) return a + (d.tiktok.views ?? 0)
-    return a
-  }, 0)
-  const conservativeViews = Math.round(totalViews * 0.8)
+  const totalViews = deliverables.reduce((a, d) => a + getViews(d), 0)
+  
+  // Target views (from analytics if available)
+  const targetViews = analytics.viewsOverTime.length > 0 
+    ? analytics.viewsOverTime[analytics.viewsOverTime.length - 1].target 
+    : Math.round(totalViews * 1.1)
+  
+  const progressPct = targetViews > 0 ? Math.min((totalViews / targetViews) * 100, 100) : 0
+  const isOverTarget = totalViews > targetViews
+
+  // Cost per CCV for Twitch deliverables
+  const twitchDeliverables = deliverables.filter(d => d.twitch)
+  const totalTwitchCost = twitchDeliverables.reduce((a, d) => a + d.internalPrice, 0)
+  const totalCCV = twitchDeliverables.reduce((a, d) => a + (d.twitch?.avgCCV ?? 0), 0)
+  const avgCostPerCCV = totalCCV > 0 ? (totalTwitchCost / totalCCV).toFixed(2) : null
 
   return (
     <AppShell>
@@ -502,121 +385,70 @@ export default function CampaignDashboard({ params }: { params: { id: string } }
             </div>
             <div className="flex items-center gap-2 shrink-0">
               <Button
-                variant="outline"
                 size="sm"
-                onClick={() => setActiveTab('import')}
-                className="h-7 text-xs border-border gap-1.5"
+                onClick={() => setShowAddDeliverableModal(true)}
+                className="h-7 text-xs bg-primary text-primary-foreground gap-1.5"
               >
-                <Upload size={12} /> Bulk Import
-              </Button>
-              <Button size="sm" className="h-7 text-xs bg-primary text-primary-foreground gap-1.5">
                 <Plus size={12} /> Add Deliverable
               </Button>
             </div>
           </div>
 
+          {/* Overall Campaign Progress Bar */}
+          <div className="bg-card border border-border rounded-lg p-4">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <Eye size={14} className="text-primary" />
+                <span className="text-sm font-medium text-foreground">Overall Campaign Progress</span>
+              </div>
+              <div className="flex items-center gap-4 text-xs">
+                <span className="text-muted-foreground">
+                  Actual: <span className={`font-mono font-semibold ${isOverTarget ? 'text-emerald-400' : 'text-foreground'}`}>{formatM(totalViews)}</span>
+                </span>
+                <span className="text-muted-foreground">
+                  Target: <span className="font-mono font-semibold text-foreground">{formatM(targetViews)}</span>
+                </span>
+                <Badge className={`text-[10px] ${isOverTarget ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/20' : 'bg-yellow-500/15 text-yellow-400 border-yellow-500/20'}`}>
+                  {progressPct.toFixed(0)}% {isOverTarget ? 'Exceeded' : 'Complete'}
+                </Badge>
+              </div>
+            </div>
+            <div className="h-3 bg-secondary rounded-full overflow-hidden">
+              <div 
+                className={`h-full rounded-full transition-all ${isOverTarget ? 'bg-emerald-400' : 'bg-primary'}`}
+                style={{ width: `${Math.min(progressPct, 100)}%` }}
+              />
+            </div>
+          </div>
+
           {/* KPI Strip */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
             {[
-              { label: 'Conservative Views', value: formatM(conservativeViews), sub: '80% of projected', icon: Eye },
-              { label: 'Client Total', value: `$${(totalClientValue / 1000).toFixed(0)}K`, sub: 'billed value', hidden: false, icon: TrendingUp },
-              { label: 'Total Profit', value: `$${(totalProfit / 1000).toFixed(0)}K`, sub: 'agency profit', hidden: true, green: true, icon: TrendingUp },
-              { label: 'Blended Margin', value: `${avgMargin}%`, sub: 'avg across campaign', hidden: true, green: true, icon: TrendingUp },
-            ].map(({ label, value, sub, hidden, green, icon: Icon }) => {
+              { label: 'Total Views', value: formatM(totalViews), icon: Eye },
+              { label: 'Client Total', value: `$${(totalClientValue / 1000).toFixed(0)}K`, icon: TrendingUp },
+              { label: 'Total Profit', value: `$${(totalProfit / 1000).toFixed(0)}K`, hidden: true, green: true, icon: TrendingUp },
+              { label: 'Blended Margin', value: `${avgMargin}%`, hidden: true, green: true, icon: TrendingUp },
+              { label: 'Avg Cost/CCV', value: avgCostPerCCV ? `$${avgCostPerCCV}` : '—', hidden: true, icon: TrendingUp },
+            ].map(({ label, value, hidden, green, icon: Icon }) => {
               if (presentationMode && hidden) return null
               return (
                 <div key={label} className="bg-card border border-border rounded-lg px-4 py-3 flex items-center gap-3">
-                  <div className="w-8 h-8 rounded bg-primary/10 flex items-center justify-center shrink-0">
-                    <Icon size={14} className="text-primary" />
+                  <div className="w-7 h-7 rounded bg-primary/10 flex items-center justify-center shrink-0">
+                    <Icon size={13} className="text-primary" />
                   </div>
                   <div>
                     <div className="text-[10px] text-muted-foreground">{label}</div>
-                    <div className={`text-base font-semibold font-mono tabular-nums ${green ? 'text-emerald-400' : 'text-foreground'}`}>{value}</div>
-                    <div className="text-[10px] text-muted-foreground">{sub}</div>
+                    <div className={`text-sm font-semibold font-mono tabular-nums ${green ? 'text-emerald-400' : 'text-foreground'}`}>{value}</div>
                   </div>
                 </div>
               )
             })}
           </div>
 
-          {/* Analytics Charts (moved from separate Analytics page) */}
-          {analytics.viewsOverTime.length > 0 && (
-            <div className="grid md:grid-cols-2 gap-4">
-              {/* Views Over Time Chart */}
-              <div className="bg-card border border-border rounded-lg p-4">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-sm font-medium text-foreground">Total Views Growth</h3>
-                  <Badge className="bg-emerald-500/15 text-emerald-400 border-emerald-500/20 text-[10px]">
-                    +{((analytics.viewsOverTime[analytics.viewsOverTime.length - 1]?.views / analytics.viewsOverTime[analytics.viewsOverTime.length - 1]?.target - 1) * 100).toFixed(0)}% vs target
-                  </Badge>
-                </div>
-                <div className="h-48">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={analytics.viewsOverTime}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                      <XAxis dataKey="date" tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} tickLine={false} axisLine={false} />
-                      <YAxis tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} tickFormatter={formatM} tickLine={false} axisLine={false} />
-                      <RechartsTooltip content={<CustomChartTooltip />} />
-                      <Line type="monotone" dataKey="views" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} name="Actual" />
-                      <Line type="monotone" dataKey="target" stroke="hsl(var(--muted-foreground))" strokeWidth={1} strokeDasharray="4 4" dot={false} name="Target" />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-
-              {/* Views by Content Type Pie Chart */}
-              <div className="bg-card border border-border rounded-lg p-4">
-                <h3 className="text-sm font-medium text-foreground mb-4">Views by Content Type</h3>
-                <div className="h-48 flex items-center">
-                  <div className="w-1/2 h-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={analytics.byContentType}
-                          dataKey="views"
-                          nameKey="type"
-                          cx="50%"
-                          cy="50%"
-                          outerRadius={70}
-                          innerRadius={40}
-                        >
-                          {analytics.byContentType.map((entry, index) => (
-                            <Cell key={entry.type} fill={PIE_COLORS[index % PIE_COLORS.length]} />
-                          ))}
-                        </Pie>
-                        <RechartsTooltip 
-                          content={({ active, payload }) => {
-                            if (!active || !payload?.length) return null
-                            const data = payload[0].payload
-                            return (
-                              <div className="bg-card border border-border rounded-md p-2 text-xs shadow-lg">
-                                <div className="font-medium text-foreground">{data.type}</div>
-                                <div className="text-muted-foreground">{formatM(data.views)} views</div>
-                              </div>
-                            )
-                          }}
-                        />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </div>
-                  <div className="w-1/2 space-y-2">
-                    {analytics.byContentType.map((ct, i) => (
-                      <div key={ct.type} className="flex items-center gap-2 text-xs">
-                        <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: PIE_COLORS[i % PIE_COLORS.length] }} />
-                        <span className="text-muted-foreground truncate flex-1">{ct.type}</span>
-                        <span className="font-mono tabular-nums text-foreground">{formatM(ct.views)}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Toolbar */}
+          {/* Tabs */}
           <div className="flex items-center justify-between gap-2 flex-wrap">
             <div className="flex items-center gap-0.5 border-b border-border">
-              {(['deliverables', 'import'] as const).map(tab => (
+              {(['deliverables', 'analytics'] as const).map(tab => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
@@ -626,7 +458,7 @@ export default function CampaignDashboard({ params }: { params: { id: string } }
                       : 'border-transparent text-muted-foreground hover:text-foreground'
                   }`}
                 >
-                  {tab === 'import' ? 'Bulk Import' : 'Deliverables Table'}
+                  {tab === 'analytics' ? 'Detailed Analytics' : 'Deliverables'}
                 </button>
               ))}
             </div>
@@ -644,26 +476,28 @@ export default function CampaignDashboard({ params }: { params: { id: string } }
                 {refreshing ? 'Refreshing...' : 'Refresh Stats'}
               </Button>
 
-              {/* Auto-Refresh Settings */}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowAutoRefreshDialog(true)}
-                className="h-7 text-xs border-border gap-1.5"
-              >
-                <Clock size={11} />
-                Auto-Refresh: {autoRefreshInterval === 'off' ? 'Off' : autoRefreshInterval}
-              </Button>
-
-              {/* Export to Sheets */}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleExportToSheets}
-                className="h-7 text-xs border-border gap-1.5"
-              >
-                <FileSpreadsheet size={11} /> Export
-              </Button>
+              {/* Export Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="h-7 text-xs border-border gap-1.5">
+                    <Download size={11} /> Export
+                    <ChevronDown size={10} />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="bg-card border-border w-52">
+                  <DropdownMenuItem className="text-xs gap-2">
+                    <FileSpreadsheet size={12} /> Export to Google Sheets
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator className="bg-border" />
+                  <DropdownMenuItem className="text-xs gap-2">
+                    <FileText size={12} /> Download Internal PDF
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="text-xs gap-2">
+                    <Eye size={12} /> Download External PDF
+                    <span className="text-muted-foreground ml-auto text-[10px]">Pricing masked</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
 
               {/* Column Visibility */}
               <DropdownMenu>
@@ -674,55 +508,83 @@ export default function CampaignDashboard({ params }: { params: { id: string } }
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="bg-card border-border w-48">
-                  <div className="px-2 py-1.5 text-xs text-muted-foreground font-medium">Platform Columns</div>
+                  <div className="px-2 py-1.5 text-xs text-muted-foreground font-medium">Visible Columns</div>
                   <DropdownMenuCheckboxItem
-                    checked={visibleColumns.youtube}
-                    onCheckedChange={c => setVisibleColumns(v => ({ ...v, youtube: !!c }))}
+                    checked={visibleColumns.platform}
+                    onCheckedChange={c => setVisibleColumns(v => ({ ...v, platform: !!c }))}
                     className="text-xs"
                   >
-                    <YouTubeIcon className="w-3 h-3 text-red-500 mr-2" /> YouTube
+                    Platform
                   </DropdownMenuCheckboxItem>
                   <DropdownMenuCheckboxItem
-                    checked={visibleColumns.tiktok}
-                    onCheckedChange={c => setVisibleColumns(v => ({ ...v, tiktok: !!c }))}
+                    checked={visibleColumns.creator}
+                    onCheckedChange={c => setVisibleColumns(v => ({ ...v, creator: !!c }))}
                     className="text-xs"
                   >
-                    <TikTokIcon className="w-3 h-3 text-cyan-400 mr-2" /> TikTok
+                    Creator
                   </DropdownMenuCheckboxItem>
                   <DropdownMenuCheckboxItem
-                    checked={visibleColumns.twitch}
-                    onCheckedChange={c => setVisibleColumns(v => ({ ...v, twitch: !!c }))}
+                    checked={visibleColumns.contentType}
+                    onCheckedChange={c => setVisibleColumns(v => ({ ...v, contentType: !!c }))}
                     className="text-xs"
                   >
-                    <TwitchIcon className="w-3 h-3 text-purple-500 mr-2" /> Twitch
+                    Deliverable Type
                   </DropdownMenuCheckboxItem>
                   <DropdownMenuSeparator className="bg-border" />
-                  <div className="px-2 py-1.5 text-xs text-muted-foreground font-medium">Financial Columns</div>
+                  <div className="px-2 py-1.5 text-xs text-muted-foreground font-medium">Metrics</div>
+                  <DropdownMenuCheckboxItem
+                    checked={visibleColumns.views}
+                    onCheckedChange={c => setVisibleColumns(v => ({ ...v, views: !!c }))}
+                    className="text-xs"
+                  >
+                    Views
+                  </DropdownMenuCheckboxItem>
+                  <DropdownMenuCheckboxItem
+                    checked={visibleColumns.likes}
+                    onCheckedChange={c => setVisibleColumns(v => ({ ...v, likes: !!c }))}
+                    className="text-xs"
+                  >
+                    Likes
+                  </DropdownMenuCheckboxItem>
+                  <DropdownMenuCheckboxItem
+                    checked={visibleColumns.comments}
+                    onCheckedChange={c => setVisibleColumns(v => ({ ...v, comments: !!c }))}
+                    className="text-xs"
+                  >
+                    Comments
+                  </DropdownMenuCheckboxItem>
+                  <DropdownMenuCheckboxItem
+                    checked={visibleColumns.shares}
+                    onCheckedChange={c => setVisibleColumns(v => ({ ...v, shares: !!c }))}
+                    className="text-xs"
+                  >
+                    Shares/Reposts
+                  </DropdownMenuCheckboxItem>
+                  <DropdownMenuCheckboxItem
+                    checked={visibleColumns.er}
+                    onCheckedChange={c => setVisibleColumns(v => ({ ...v, er: !!c }))}
+                    className="text-xs"
+                  >
+                    ER%
+                  </DropdownMenuCheckboxItem>
+                  <DropdownMenuSeparator className="bg-border" />
+                  <div className="px-2 py-1.5 text-xs text-muted-foreground font-medium">Financial</div>
                   {!presentationMode && (
-                    <>
-                      <DropdownMenuCheckboxItem
-                        checked={visibleColumns.internalPrice}
-                        onCheckedChange={c => setVisibleColumns(v => ({ ...v, internalPrice: !!c }))}
-                        className="text-xs"
-                      >
-                        Internal Price
-                      </DropdownMenuCheckboxItem>
-                      <DropdownMenuCheckboxItem
-                        checked={visibleColumns.profit}
-                        onCheckedChange={c => setVisibleColumns(v => ({ ...v, profit: !!c }))}
-                        className="text-xs"
-                      >
-                        Profit
-                      </DropdownMenuCheckboxItem>
-                      <DropdownMenuCheckboxItem
-                        checked={visibleColumns.margin}
-                        onCheckedChange={c => setVisibleColumns(v => ({ ...v, margin: !!c }))}
-                        className="text-xs"
-                      >
-                        Margin %
-                      </DropdownMenuCheckboxItem>
-                    </>
+                    <DropdownMenuCheckboxItem
+                      checked={visibleColumns.internalPrice}
+                      onCheckedChange={c => setVisibleColumns(v => ({ ...v, internalPrice: !!c }))}
+                      className="text-xs"
+                    >
+                      Internal Price
+                    </DropdownMenuCheckboxItem>
                   )}
+                  <DropdownMenuCheckboxItem
+                    checked={visibleColumns.clientPrice}
+                    onCheckedChange={c => setVisibleColumns(v => ({ ...v, clientPrice: !!c }))}
+                    className="text-xs"
+                  >
+                    Client Price
+                  </DropdownMenuCheckboxItem>
                   <DropdownMenuCheckboxItem
                     checked={visibleColumns.cpm}
                     onCheckedChange={c => setVisibleColumns(v => ({ ...v, cpm: !!c }))}
@@ -730,90 +592,344 @@ export default function CampaignDashboard({ params }: { params: { id: string } }
                   >
                     CPM
                   </DropdownMenuCheckboxItem>
-                  {!presentationMode && (
-                    <DropdownMenuCheckboxItem
-                      checked={visibleColumns.costPerCCV}
-                      onCheckedChange={c => setVisibleColumns(v => ({ ...v, costPerCCV: !!c }))}
-                      className="text-xs"
-                    >
-                      Cost/CCV
-                    </DropdownMenuCheckboxItem>
-                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
           </div>
 
-          {activeTab === 'import' ? (
-            <ImportArea onImport={(links) => console.log('Imported links:', links)} />
+          {activeTab === 'analytics' ? (
+            /* Detailed Analytics Tab */
+            <div className="space-y-4">
+              {analytics.viewsOverTime.length > 0 ? (
+                <>
+                  {/* Views Over Time Chart */}
+                  <div className="bg-card border border-border rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-sm font-medium text-foreground">Total Views Over Time</h3>
+                      <Badge className="bg-emerald-500/15 text-emerald-400 border-emerald-500/20 text-[10px]">
+                        +{((analytics.viewsOverTime[analytics.viewsOverTime.length - 1]?.views / analytics.viewsOverTime[analytics.viewsOverTime.length - 1]?.target - 1) * 100).toFixed(0)}% vs target
+                      </Badge>
+                    </div>
+                    <div className="h-64">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={analytics.viewsOverTime}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                          <XAxis dataKey="date" tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} tickLine={false} axisLine={false} />
+                          <YAxis tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} tickFormatter={formatM} tickLine={false} axisLine={false} />
+                          <RechartsTooltip content={<CustomChartTooltip />} />
+                          <Line type="monotone" dataKey="views" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ fill: 'hsl(var(--primary))', r: 3 }} name="Actual" />
+                          <Line type="monotone" dataKey="target" stroke="hsl(var(--muted-foreground))" strokeWidth={1} strokeDasharray="4 4" dot={false} name="Target" />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+
+                  <div className="grid md:grid-cols-2 gap-4">
+                    {/* Views by Platform Pie Chart */}
+                    <div className="bg-card border border-border rounded-lg p-4">
+                      <h3 className="text-sm font-medium text-foreground mb-4">Views by Platform</h3>
+                      <div className="h-48 flex items-center">
+                        <div className="w-1/2 h-full">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                              <Pie
+                                data={analytics.byPlatform}
+                                dataKey="views"
+                                nameKey="platform"
+                                cx="50%"
+                                cy="50%"
+                                outerRadius={70}
+                                innerRadius={40}
+                              >
+                                {analytics.byPlatform.map((entry) => (
+                                  <Cell key={entry.platform} fill={entry.color} />
+                                ))}
+                              </Pie>
+                              <RechartsTooltip 
+                                content={({ active, payload }) => {
+                                  if (!active || !payload?.length) return null
+                                  const data = payload[0].payload
+                                  return (
+                                    <div className="bg-card border border-border rounded-md p-2 text-xs shadow-lg">
+                                      <div className="font-medium text-foreground">{data.platform}</div>
+                                      <div className="text-muted-foreground">{formatM(data.views)} views</div>
+                                    </div>
+                                  )
+                                }}
+                              />
+                            </PieChart>
+                          </ResponsiveContainer>
+                        </div>
+                        <div className="w-1/2 space-y-2">
+                          {analytics.byPlatform.map((p) => (
+                            <div key={p.platform} className="flex items-center gap-2 text-xs">
+                              <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: p.color }} />
+                              <span className="text-muted-foreground truncate flex-1">{p.platform}</span>
+                              <span className="font-mono tabular-nums text-foreground">{formatM(p.views)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Views by Content Type Pie Chart */}
+                    <div className="bg-card border border-border rounded-lg p-4">
+                      <h3 className="text-sm font-medium text-foreground mb-4">Views by Content Type</h3>
+                      <div className="h-48 flex items-center">
+                        <div className="w-1/2 h-full">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                              <Pie
+                                data={analytics.byContentType}
+                                dataKey="views"
+                                nameKey="type"
+                                cx="50%"
+                                cy="50%"
+                                outerRadius={70}
+                                innerRadius={40}
+                              >
+                                {analytics.byContentType.map((entry, index) => (
+                                  <Cell key={entry.type} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                                ))}
+                              </Pie>
+                              <RechartsTooltip 
+                                content={({ active, payload }) => {
+                                  if (!active || !payload?.length) return null
+                                  const data = payload[0].payload
+                                  return (
+                                    <div className="bg-card border border-border rounded-md p-2 text-xs shadow-lg">
+                                      <div className="font-medium text-foreground">{data.type}</div>
+                                      <div className="text-muted-foreground">{formatM(data.views)} views</div>
+                                    </div>
+                                  )
+                                }}
+                              />
+                            </PieChart>
+                          </ResponsiveContainer>
+                        </div>
+                        <div className="w-1/2 space-y-2">
+                          {analytics.byContentType.map((ct, i) => (
+                            <div key={ct.type} className="flex items-center gap-2 text-xs">
+                              <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: PIE_COLORS[i % PIE_COLORS.length] }} />
+                              <span className="text-muted-foreground truncate flex-1">{ct.type}</span>
+                              <span className="font-mono tabular-nums text-foreground">{formatM(ct.views)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Top Performers */}
+                  {analytics.topPerformers.length > 0 && (
+                    <div className="bg-card border border-border rounded-lg p-4">
+                      <h3 className="text-sm font-medium text-foreground mb-4">Top Performers</h3>
+                      <div className="space-y-2">
+                        {analytics.topPerformers.map((p, i) => (
+                          <div key={i} className="flex items-center gap-3 p-2 rounded bg-secondary/50">
+                            <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
+                              <span className="text-primary text-[10px] font-bold">{i + 1}</span>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="text-xs font-medium text-foreground flex items-center gap-1.5">
+                                {p.creator}
+                                <PlatformIcon platform={p.platform} size={12} />
+                              </div>
+                              <div className="text-[10px] text-muted-foreground">{p.badge}</div>
+                            </div>
+                            <div className="text-right">
+                              {p.ccv ? (
+                                <div className="text-xs font-mono text-purple-400">{formatM(p.ccv)} CCV</div>
+                              ) : (
+                                <div className="text-xs font-mono text-foreground">{formatM(p.views)} views</div>
+                              )}
+                              {p.er > 0 && <div className="text-[10px] text-emerald-400">{p.er}% ER</div>}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="bg-card border border-border rounded-lg p-12 text-center">
+                  <div className="text-muted-foreground text-sm">No analytics data available yet.</div>
+                  <p className="text-xs text-muted-foreground/60 mt-1">Analytics will appear once deliverables go live.</p>
+                </div>
+              )}
+            </div>
           ) : (
+            /* Deliverables Table */
             <div className="bg-card border border-border rounded-lg overflow-hidden">
               <div className="overflow-x-auto">
-                <table className="text-xs w-full min-w-[1200px]">
+                <table className="text-xs w-full min-w-[900px]">
                   <thead className="sticky top-0 z-20">
                     <tr className="bg-secondary border-b border-border">
-                      <th className="text-left text-muted-foreground font-medium px-3 py-2.5 sticky left-0 bg-secondary z-30 whitespace-nowrap">Creator</th>
-                      <th className="text-left text-muted-foreground font-medium px-2 py-2.5 whitespace-nowrap">Content Type</th>
-                      <th className="text-left text-muted-foreground font-medium px-3 py-2.5 whitespace-nowrap">Progress</th>
-                      <th className="text-right text-muted-foreground font-medium px-3 py-2.5 whitespace-nowrap">Cons. Views</th>
-                      <th className="text-right text-muted-foreground font-medium px-3 py-2.5 whitespace-nowrap">Target</th>
-
-                      {/* YT Header */}
-                      {visibleColumns.youtube && (
-                        <>
-                          <th className="text-right text-muted-foreground font-medium px-3 py-2.5 whitespace-nowrap border-l border-border/50">
-                            <span className="flex items-center justify-end gap-1.5">
-                              <YouTubeIcon className="w-3 h-3 text-red-500" /> 30D Avg
-                            </span>
-                          </th>
-                          <th className="text-right text-muted-foreground font-medium px-3 py-2.5 whitespace-nowrap">ER%</th>
-                        </>
+                      {visibleColumns.platform && (
+                        <th className="text-center text-muted-foreground font-medium px-3 py-2.5 w-12">
+                          <SortHeader label="" sortKey="platform" currentSort={sortKey} currentDir={sortDir} onSort={handleSort} align="center" />
+                        </th>
                       )}
-
-                      {/* TT Header */}
-                      {visibleColumns.tiktok && (
-                        <>
-                          <th className="text-right text-muted-foreground font-medium px-3 py-2.5 whitespace-nowrap border-l border-border/50">
-                            <span className="flex items-center justify-end gap-1.5">
-                              <TikTokIcon className="w-3 h-3 text-cyan-400" /> Views
-                            </span>
-                          </th>
-                          <th className="text-right text-muted-foreground font-medium px-3 py-2.5 whitespace-nowrap">ER%</th>
-                        </>
+                      {visibleColumns.creator && (
+                        <th className="text-left text-muted-foreground font-medium px-3 py-2.5 min-w-[140px]">
+                          <SortHeader label="Creator" sortKey="creator" currentSort={sortKey} currentDir={sortDir} onSort={handleSort} />
+                        </th>
                       )}
-
-                      {/* Twitch Header */}
-                      {visibleColumns.twitch && (
-                        <>
-                          <th className="text-right text-muted-foreground font-medium px-3 py-2.5 whitespace-nowrap border-l border-border/50">
-                            <span className="flex items-center justify-end gap-1.5">
-                              <TwitchIcon className="w-3 h-3 text-purple-500" /> Avg CCV
-                            </span>
-                          </th>
-                          <th className="text-right text-muted-foreground font-medium px-3 py-2.5 whitespace-nowrap">Peak</th>
-                        </>
+                      {visibleColumns.contentType && (
+                        <th className="text-left text-muted-foreground font-medium px-3 py-2.5 min-w-[140px]">
+                          <SortHeader label="Deliverable Type" sortKey="contentType" currentSort={sortKey} currentDir={sortDir} onSort={handleSort} />
+                        </th>
                       )}
-
-                      {/* Financials */}
-                      {!presentationMode && visibleColumns.internalPrice && <th className="text-right text-muted-foreground font-medium px-3 py-2.5 whitespace-nowrap border-l border-border/50">Internal $</th>}
-                      <th className="text-right text-muted-foreground font-medium px-3 py-2.5 whitespace-nowrap">Client $</th>
-                      {!presentationMode && visibleColumns.profit && <th className="text-right text-muted-foreground font-medium px-3 py-2.5 whitespace-nowrap">Profit</th>}
-                      {!presentationMode && visibleColumns.margin && <th className="text-right text-muted-foreground font-medium px-3 py-2.5 whitespace-nowrap">Margin</th>}
-                      {visibleColumns.cpm && <th className="text-right text-muted-foreground font-medium px-3 py-2.5 whitespace-nowrap">CPM</th>}
-                      {!presentationMode && visibleColumns.costPerCCV && <th className="text-right text-muted-foreground font-medium px-3 py-2.5 whitespace-nowrap">$/CCV</th>}
-                      <th className="w-8" />
+                      {visibleColumns.views && (
+                        <th className="text-right text-muted-foreground font-medium px-3 py-2.5">
+                          <SortHeader label="Views" sortKey="views" currentSort={sortKey} currentDir={sortDir} onSort={handleSort} align="right" />
+                        </th>
+                      )}
+                      {visibleColumns.likes && (
+                        <th className="text-right text-muted-foreground font-medium px-3 py-2.5">
+                          <SortHeader label="Likes" sortKey="likes" currentSort={sortKey} currentDir={sortDir} onSort={handleSort} align="right" />
+                        </th>
+                      )}
+                      {visibleColumns.comments && (
+                        <th className="text-right text-muted-foreground font-medium px-3 py-2.5">
+                          <SortHeader label="Comments" sortKey="comments" currentSort={sortKey} currentDir={sortDir} onSort={handleSort} align="right" />
+                        </th>
+                      )}
+                      {visibleColumns.shares && (
+                        <th className="text-right text-muted-foreground font-medium px-3 py-2.5">
+                          <SortHeader label="Shares" sortKey="shares" currentSort={sortKey} currentDir={sortDir} onSort={handleSort} align="right" />
+                        </th>
+                      )}
+                      {visibleColumns.er && (
+                        <th className="text-right text-muted-foreground font-medium px-3 py-2.5">
+                          <SortHeader label="ER%" sortKey="er" currentSort={sortKey} currentDir={sortDir} onSort={handleSort} align="right" />
+                        </th>
+                      )}
+                      {!presentationMode && visibleColumns.internalPrice && (
+                        <th className="text-right text-muted-foreground font-medium px-3 py-2.5 border-l border-border/50">
+                          <SortHeader label="Internal $" sortKey="internalPrice" currentSort={sortKey} currentDir={sortDir} onSort={handleSort} align="right" />
+                        </th>
+                      )}
+                      {visibleColumns.clientPrice && (
+                        <th className="text-right text-muted-foreground font-medium px-3 py-2.5">
+                          <SortHeader label="Client $" sortKey="clientPrice" currentSort={sortKey} currentDir={sortDir} onSort={handleSort} align="right" />
+                        </th>
+                      )}
+                      {visibleColumns.cpm && (
+                        <th className="text-right text-muted-foreground font-medium px-3 py-2.5">CPM</th>
+                      )}
+                      <th className="w-10" />
                     </tr>
                   </thead>
                   <tbody>
-                    {deliverables.map(row => (
-                      <DeliverableRow
-                        key={row.id}
-                        row={row}
-                        presentationMode={presentationMode}
-                        visibleColumns={visibleColumns}
-                        onUpdate={updateDeliverable}
-                      />
-                    ))}
+                    {sortedDeliverables.map(row => {
+                      const views = getViews(row)
+                      const likes = getLikes(row)
+                      const comments = getComments(row)
+                      const shares = getShares(row)
+                      const er = getER(row)
+                      const cpm = row.cpm ? `$${row.cpm.toFixed(2)}` : null
+
+                      return (
+                        <tr key={row.id} className="border-b border-border/50 hover:bg-secondary/20 transition-colors group">
+                          {visibleColumns.platform && (
+                            <td className="px-3 py-2.5 text-center">
+                              <PlatformIcon platform={row.creator.platform} size={16} />
+                            </td>
+                          )}
+                          {visibleColumns.creator && (
+                            <td className="px-3 py-2.5">
+                              <div className="flex items-center gap-2">
+                                <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
+                                  <span className="text-primary text-[10px] font-bold">{row.creator.avatar}</span>
+                                </div>
+                                <span className="text-foreground font-medium">{row.creator.handle}</span>
+                              </div>
+                            </td>
+                          )}
+                          {visibleColumns.contentType && (
+                            <td className="px-3 py-2.5">
+                              <Select
+                                value={row.contentType}
+                                onValueChange={v => updateDeliverable(row.id, 'contentType', v)}
+                              >
+                                <SelectTrigger className="h-6 text-[11px] bg-secondary border-border w-full">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent className="bg-card border-border">
+                                  {CONTENT_TYPES.map(t => (
+                                    <SelectItem key={t} value={t} className="text-xs">{t}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </td>
+                          )}
+                          {visibleColumns.views && (
+                            <td className="px-3 py-2.5 text-right">
+                              <MetricCell value={views} className="text-foreground" />
+                            </td>
+                          )}
+                          {visibleColumns.likes && (
+                            <td className="px-3 py-2.5 text-right">
+                              <MetricCell value={likes} />
+                            </td>
+                          )}
+                          {visibleColumns.comments && (
+                            <td className="px-3 py-2.5 text-right">
+                              <MetricCell value={comments} />
+                            </td>
+                          )}
+                          {visibleColumns.shares && (
+                            <td className="px-3 py-2.5 text-right">
+                              <MetricCell value={shares} />
+                            </td>
+                          )}
+                          {visibleColumns.er && (
+                            <td className="px-3 py-2.5 text-right">
+                              {er > 0 ? (
+                                <span className={`font-mono tabular-nums ${er > 5 ? 'text-emerald-400' : 'text-foreground'}`}>{er}%</span>
+                              ) : (
+                                <span className="text-muted-foreground/40">—</span>
+                              )}
+                            </td>
+                          )}
+                          {!presentationMode && visibleColumns.internalPrice && (
+                            <td className="px-3 py-2.5 text-right border-l border-border/50">
+                              <span className="font-mono tabular-nums text-foreground">${row.internalPrice.toLocaleString()}</span>
+                            </td>
+                          )}
+                          {visibleColumns.clientPrice && (
+                            <td className="px-3 py-2.5 text-right">
+                              <span className="font-mono tabular-nums text-foreground">${row.clientPrice.toLocaleString()}</span>
+                            </td>
+                          )}
+                          {visibleColumns.cpm && (
+                            <td className="px-3 py-2.5 text-right">
+                              {cpm ? <span className="font-mono tabular-nums text-foreground">{cpm}</span> : <span className="text-muted-foreground/40">—</span>}
+                            </td>
+                          )}
+                          <td className="px-3 py-2.5">
+                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <a href={row.link} target="_blank" rel="noreferrer" className="text-muted-foreground hover:text-foreground">
+                                <ExternalLink size={12} />
+                              </a>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="sm" className="h-5 w-5 p-0 text-muted-foreground hover:text-foreground">
+                                    <MoreHorizontal size={12} />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="bg-card border-border w-32">
+                                  <DropdownMenuItem className="text-xs gap-2 text-destructive-foreground">
+                                    <Trash2 size={11} /> Remove
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -821,12 +937,11 @@ export default function CampaignDashboard({ params }: { params: { id: string } }
               {/* Footer totals */}
               <div className="border-t border-border px-4 py-2.5 bg-secondary/50 flex items-center gap-6 text-xs">
                 <span className="text-muted-foreground font-medium">{deliverables.length} Deliverables</span>
-                <span className="text-muted-foreground">Conservative Views: <span className="text-yellow-400 font-mono">{formatM(conservativeViews)}</span></span>
+                <span className="text-muted-foreground">Total Views: <span className="text-foreground font-mono">{formatM(totalViews)}</span></span>
                 {!presentationMode && (
                   <>
                     <span className="text-muted-foreground">Client Total: <span className="text-foreground font-mono">${totalClientValue.toLocaleString()}</span></span>
                     <span className="text-muted-foreground">Total Profit: <span className="text-emerald-400 font-mono">${totalProfit.toLocaleString()}</span></span>
-                    <span className="text-muted-foreground">Blended Margin: <span className="text-emerald-400 font-mono">{avgMargin}%</span></span>
                   </>
                 )}
               </div>
@@ -834,40 +949,62 @@ export default function CampaignDashboard({ params }: { params: { id: string } }
           )}
         </div>
 
-        {/* Auto-Refresh Settings Dialog */}
-        <Dialog open={showAutoRefreshDialog} onOpenChange={setShowAutoRefreshDialog}>
-          <DialogContent className="bg-card border-border max-w-sm">
+        {/* Add Deliverable Modal */}
+        <Dialog open={showAddDeliverableModal} onOpenChange={setShowAddDeliverableModal}>
+          <DialogContent className="bg-card border-border max-w-md">
             <DialogHeader>
               <DialogTitle className="text-sm text-foreground flex items-center gap-2">
-                <Clock size={15} className="text-primary" />
-                Configure Auto-Refresh
+                <Plus size={15} className="text-primary" />
+                Add Deliverable
               </DialogTitle>
               <DialogDescription className="text-xs text-muted-foreground">
-                Automatically refresh deliverable stats at your chosen interval.
+                Add a new deliverable to this campaign by pasting a social media link.
               </DialogDescription>
             </DialogHeader>
-            <div className="space-y-3">
-              {[
-                { value: 'off', label: 'Off — Manual refresh only' },
-                { value: '1h', label: 'Every hour' },
-                { value: '6h', label: 'Every 6 hours' },
-                { value: 'daily', label: 'Daily (recommended)' },
-              ].map(opt => (
-                <label key={opt.value} className="flex items-center gap-3 p-2 rounded hover:bg-secondary cursor-pointer">
-                  <input
-                    type="radio"
-                    name="autoRefresh"
-                    checked={autoRefreshInterval === opt.value}
-                    onChange={() => setAutoRefreshInterval(opt.value as typeof autoRefreshInterval)}
-                    className="accent-primary"
-                  />
-                  <span className="text-xs text-foreground">{opt.label}</span>
-                </label>
-              ))}
+            <div className="space-y-4">
+              <div>
+                <label className="text-xs text-muted-foreground block mb-1.5">Social Media Link</label>
+                <Input 
+                  placeholder="https://youtube.com/watch?v=... or https://tiktok.com/@creator/video/..."
+                  className="h-9 text-xs bg-secondary border-border"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground block mb-1.5">Content Type</label>
+                <Select defaultValue="Dedicated Video">
+                  <SelectTrigger className="h-9 text-xs bg-secondary border-border">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-card border-border">
+                    {CONTENT_TYPES.map(t => (
+                      <SelectItem key={t} value={t} className="text-xs">{t}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs text-muted-foreground block mb-1.5">Internal Price</label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
+                    <Input placeholder="0" className="h-9 pl-6 text-xs bg-secondary border-border font-mono" />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground block mb-1.5">Client Price</label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
+                    <Input placeholder="0" className="h-9 pl-6 text-xs bg-secondary border-border font-mono" />
+                  </div>
+                </div>
+              </div>
             </div>
-            <DialogFooter>
-              <Button size="sm" onClick={() => setShowAutoRefreshDialog(false)} className="bg-primary text-primary-foreground">
-                Save
+            <DialogFooter className="gap-2">
+              <Button variant="outline" size="sm" onClick={() => setShowAddDeliverableModal(false)} className="border-border text-muted-foreground">
+                Cancel
+              </Button>
+              <Button size="sm" onClick={() => setShowAddDeliverableModal(false)} className="bg-primary text-primary-foreground">
+                <CheckCircle size={12} className="mr-1.5" /> Add Deliverable
               </Button>
             </DialogFooter>
           </DialogContent>

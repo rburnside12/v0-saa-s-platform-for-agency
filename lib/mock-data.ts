@@ -168,6 +168,45 @@ export const MOCK_DELIVERABLES = [
   },
 ]
 
+export const MOCK_LISTS = [
+  {
+    id: 'gaming-creators',
+    name: 'Gaming Creators',
+    description: 'FPS, Battle Royale, and esports talent',
+    creatorCount: 24,
+    platforms: ['YouTube', 'Twitch', 'TikTok'],
+    lastUpdated: '2025-03-05',
+    totalAnticipatedSpend: 285000,
+  },
+  {
+    id: 'tech-creators',
+    name: 'Tech Creators',
+    description: 'Hardware reviewers and tech enthusiasts',
+    creatorCount: 12,
+    platforms: ['YouTube'],
+    lastUpdated: '2025-03-02',
+    totalAnticipatedSpend: 145000,
+  },
+  {
+    id: 'lifestyle-creators',
+    name: 'Lifestyle Creators',
+    description: 'Fashion, fitness, and lifestyle influencers',
+    creatorCount: 18,
+    platforms: ['Instagram', 'TikTok', 'YouTube'],
+    lastUpdated: '2025-02-28',
+    totalAnticipatedSpend: 220000,
+  },
+  {
+    id: 'epic-q2-prospects',
+    name: 'Epic Games Q2 Prospects',
+    description: 'Prospect list for upcoming Fortnite campaign',
+    creatorCount: 8,
+    platforms: ['YouTube', 'TikTok', 'Twitch'],
+    lastUpdated: '2025-03-07',
+    totalAnticipatedSpend: 115000,
+  },
+]
+
 export const MOCK_INFLUENCERS = [
   {
     id: '1',
