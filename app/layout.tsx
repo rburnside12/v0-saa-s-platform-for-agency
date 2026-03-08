@@ -16,8 +16,8 @@ const jetbrainsMono = JetBrains_Mono({
 })
 
 export const metadata: Metadata = {
-  title: 'CherryPick Talent — Agency Portal',
-  description: 'Enterprise SaaS platform for social media campaign management, influencer analytics, and reporting.',
+  title: 'Trace — Campaign Intelligence Platform',
+  description: 'Campaign management and influencer analytics platform for agencies.',
   generator: 'v0.app',
 }
 
@@ -36,11 +36,10 @@ export default function RootLayout({
               (function() {
                 try {
                   var stored = localStorage.getItem('cp-theme');
-                  var preferred = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-                  var theme = stored || preferred;
+                  var theme = stored || 'light';
                   document.documentElement.classList.add(theme);
                 } catch(e) {
-                  document.documentElement.classList.add('dark');
+                  document.documentElement.classList.add('light');
                 }
               })();
             `,
