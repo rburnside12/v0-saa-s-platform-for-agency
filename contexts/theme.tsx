@@ -17,26 +17,23 @@ const ThemeContext = createContext<ThemeContextValue>({
 })
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>('dark')
+  // Read the class already set by the blocking inline script so React state matches the DOM
+  const [theme, setThemeState] = useState<Theme>(() => {
+    if (typeof window === 'undefined') return 'dark'
+    return (localStorage.getItem('cp-theme') as Theme) ??
+      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+  })
 
+  // Keep DOM class in sync whenever state changes
   useEffect(() => {
-    const stored = localStorage.getItem('cp-theme') as Theme | null
-    const preferred = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
-    const resolved = stored ?? preferred
-    setThemeState(resolved)
-    applyTheme(resolved)
-  }, [])
-
-  function applyTheme(t: Theme) {
     const root = document.documentElement
     root.classList.remove('dark', 'light')
-    root.classList.add(t)
-  }
+    root.classList.add(theme)
+  }, [theme])
 
   function setTheme(t: Theme) {
-    setThemeState(t)
-    applyTheme(t)
     localStorage.setItem('cp-theme', t)
+    setThemeState(t)
   }
 
   function toggleTheme() {
