@@ -1,198 +1,176 @@
 'use client'
 
+import Link from 'next/link'
 import { AppShell } from '@/components/app-shell'
 import { MOCK_CAMPAIGNS } from '@/lib/mock-data'
 import { usePresentationMode } from '@/contexts/presentation-mode'
-import {
-  BarChart,
-  Bar,
-  LineChart,
-  Line,
-  PieChart,
-  Pie,
-  Cell,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from 'recharts'
-import { TrendingUp, DollarSign, Package, Zap } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { ChevronRight, Lock, TrendingUp, Users, DollarSign, Percent, BarChart3 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 
-// Mock profit trend data
-const profitTrendData = [
-  { month: 'Jan', profit: 48000 },
-  { month: 'Feb', profit: 62000 },
-  { month: 'Mar', profit: 78000 },
-]
-
-// Mock spend per client data
-const spendPerClientData = [
-  { client: 'Epic Games', spend: 312000, color: '#FF0000' },
-  { client: 'Riot Games', spend: 195000, color: '#9146FF' },
-  { client: 'Nike', spend: 348500, color: '#E1306C' },
-  { client: 'AMD', spend: 0, color: '#FFB700' },
-]
-
-// Mock recent activity
-const recentActivity = [
-  { id: 1, type: 'deliverable', message: '@SypherPK video went live on YouTube', campaign: 'Fortnite Q1 Launch', timestamp: '2 hours ago' },
-  { id: 2, type: 'campaign', message: 'Valorant campaign exceeded view target', campaign: 'Valorant Act III', timestamp: '4 hours ago' },
-  { id: 3, type: 'deliverable', message: '@Ninja stream peaked at 72K viewers', campaign: 'Fortnite Q1 Launch', timestamp: '6 hours ago' },
-  { id: 4, type: 'campaign', message: 'Nike campaign completed with 31.5M views', campaign: 'Spring/Summer 2025', timestamp: '1 day ago' },
-  { id: 5, type: 'deliverable', message: '@Clix TikTok video received 8.4M views', campaign: 'Fortnite Q1 Launch', timestamp: '2 days ago' },
+// Mock top clients data
+const TOP_CLIENTS = [
+  { name: 'Epic Games', campaigns: 3, totalSpend: 312000, views: 48200000 },
+  { name: 'Riot Games', campaigns: 2, totalSpend: 195000, views: 31500000 },
+  { name: 'Nike', campaigns: 1, totalSpend: 348500, views: 42800000 },
+  { name: 'AMD', campaigns: 1, totalSpend: 89000, views: 12400000 },
 ]
 
 export default function AgencyDashboard() {
   const { presentationMode } = usePresentationMode()
 
-  // Calculate KPIs
-  const activeCampaigns = MOCK_CAMPAIGNS.filter(c => c.status === 'active').length
-  const totalSpend = MOCK_CAMPAIGNS.reduce((a, c) => a + c.spent, 0)
-  const totalProfit = MOCK_CAMPAIGNS.reduce((a, c) => a + (c.spent * c.marginPct / 100), 0)
+  // Calculate Agency-Wide KPIs (non-rounded, detailed)
   const totalViews = MOCK_CAMPAIGNS.reduce((a, c) => a + c.totalViews, 0)
+  const totalEngagements = Math.floor(totalViews * 0.054) // 5.4% engagement rate
+  const totalClientSpend = MOCK_CAMPAIGNS.reduce((a, c) => a + c.spent, 0)
+  const avgEngagementRate = 5.42 // fixed for display
+  const avgExternalCpm = 46.18 // fixed for display
 
   return (
     <AppShell>
       <div className="p-6 space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Agency Dashboard</h1>
-          <p className="text-sm text-muted-foreground mt-1">High-level overview and recent activity</p>
+          <h1 className="text-2xl font-bold text-foreground">Agency Overview</h1>
+          <p className="text-sm text-muted-foreground mt-1">High-level performance across all campaigns</p>
         </div>
 
-        {/* KPI Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-card border border-border rounded-lg p-4">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-medium text-muted-foreground">Active Campaigns</span>
-              <Package size={14} className="text-primary" />
-            </div>
-            <div className="text-2xl font-bold text-foreground">{activeCampaigns}</div>
-            <div className="text-xs text-muted-foreground mt-1">of {MOCK_CAMPAIGNS.length} total</div>
-          </div>
-
-          <div className="bg-card border border-border rounded-lg p-4">
+        {/* KPI Bento Row — 5 Cards */}
+        <div className="grid grid-cols-5 gap-4">
+          <div className="bg-card border border-border rounded-xl p-5">
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-medium text-muted-foreground">Total Views</span>
               <TrendingUp size={14} className="text-primary" />
             </div>
-            <div className="text-2xl font-bold text-foreground font-mono">
-              {(totalViews / 1000000).toFixed(1)}M
-            </div>
-            <div className="text-xs text-muted-foreground mt-1">across all campaigns</div>
+            <p className="text-2xl font-bold text-foreground font-mono">{totalViews.toLocaleString()}</p>
           </div>
 
-          {!presentationMode && (
-            <>
-              <div className="bg-card border border-border rounded-lg p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-medium text-muted-foreground">Total Spend</span>
-                  <DollarSign size={14} className="text-blue-400" />
-                </div>
-                <div className="text-2xl font-bold text-foreground font-mono">
-                  ${(totalSpend / 1000).toFixed(0)}K
-                </div>
-                <div className="text-xs text-muted-foreground mt-1">client spend</div>
-              </div>
+          <div className="bg-card border border-border rounded-xl p-5">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-medium text-muted-foreground">Total Engagements</span>
+              <Users size={14} className="text-primary" />
+            </div>
+            <p className="text-2xl font-bold text-foreground font-mono">{totalEngagements.toLocaleString()}</p>
+          </div>
 
-              <div className="bg-card border border-border rounded-lg p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-medium text-muted-foreground">Total Profit</span>
-                  <DollarSign size={14} className="text-emerald-400" />
-                </div>
-                <div className="text-2xl font-bold text-emerald-400 font-mono">
-                  ${(totalProfit / 1000).toFixed(0)}K
-                </div>
-                <div className="text-xs text-muted-foreground mt-1">agency profit</div>
-              </div>
-            </>
-          )}
+          <div className={cn("bg-card border border-border rounded-xl p-5", presentationMode && "opacity-40")}>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-medium text-muted-foreground">Total Client Spend</span>
+              {presentationMode ? <Lock size={14} className="text-muted-foreground" /> : <DollarSign size={14} className="text-blue-500" />}
+            </div>
+            <p className="text-2xl font-bold text-foreground font-mono">
+              {presentationMode ? '••••••' : `$${totalClientSpend.toLocaleString()}`}
+            </p>
+          </div>
+
+          <div className="bg-card border border-border rounded-xl p-5">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-medium text-muted-foreground">Avg. Engagement Rate</span>
+              <Percent size={14} className="text-primary" />
+            </div>
+            <p className="text-2xl font-bold text-foreground font-mono">{avgEngagementRate}%</p>
+          </div>
+
+          <div className="bg-card border border-border rounded-xl p-5">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-medium text-muted-foreground">Avg. External CPM</span>
+              <BarChart3 size={14} className="text-primary" />
+            </div>
+            <p className="text-2xl font-bold text-foreground font-mono">${avgExternalCpm}</p>
+          </div>
         </div>
 
-        {/* Charts */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Profit Trend */}
-          {!presentationMode && (
-            <div className="bg-card border border-border rounded-lg p-4">
-              <h3 className="text-sm font-semibold text-foreground mb-4">Profit Trends</h3>
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={profitTrendData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" style={{ fontSize: '12px' }} />
-                  <YAxis stroke="hsl(var(--muted-foreground))" style={{ fontSize: '12px' }} />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: 'hsl(var(--card))',
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: '6px',
-                    }}
-                    formatter={(value: number) => `$${(value / 1000).toFixed(0)}K`}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="profit"
-                    stroke="hsl(var(--primary))"
-                    strokeWidth={2}
-                    dot={{ fill: 'hsl(var(--primary))', r: 4 }}
-                    activeDot={{ r: 6 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          )}
-
-          {/* Spend per Client */}
-          {!presentationMode && (
-            <div className="bg-card border border-border rounded-lg p-4">
-              <h3 className="text-sm font-semibold text-foreground mb-4">Spend per Client</h3>
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie
-                    data={spendPerClientData.filter(d => d.spend > 0)}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ client, spend }) => `${client}: $${(spend / 1000).toFixed(0)}K`}
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="spend"
-                  >
-                    {spendPerClientData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={(value: number) => `$${(value / 1000).toFixed(0)}K`} />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          )}
+        {/* Active Campaigns Table */}
+        <div className="bg-card border border-border rounded-xl overflow-hidden">
+          <div className="px-6 py-4 border-b border-border/50">
+            <h3 className="text-sm font-semibold text-foreground">Active Campaigns</h3>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="border-b border-border/50 bg-secondary/30">
+                  <th className="text-left px-6 py-3 text-muted-foreground font-medium">Campaign</th>
+                  <th className="text-left px-6 py-3 text-muted-foreground font-medium">Client</th>
+                  <th className="text-left px-6 py-3 text-muted-foreground font-medium">Status</th>
+                  <th className="text-right px-6 py-3 text-muted-foreground font-medium">Views</th>
+                  <th className="text-right px-6 py-3 text-muted-foreground font-medium">Deliverables</th>
+                  {!presentationMode && <th className="text-right px-6 py-3 text-muted-foreground font-medium">Client Spend</th>}
+                  <th className="text-right px-6 py-3 text-muted-foreground font-medium"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {MOCK_CAMPAIGNS.map((campaign) => (
+                  <tr key={campaign.id} className="border-b border-border/50 hover:bg-secondary/40 transition-colors">
+                    <td className="px-6 py-4">
+                      <Link href={`/campaign/${campaign.id}`} className="font-medium text-foreground hover:text-primary transition-colors">
+                        {campaign.name}
+                      </Link>
+                    </td>
+                    <td className="px-6 py-4 text-muted-foreground">{campaign.client}</td>
+                    <td className="px-6 py-4">
+                      <Badge 
+                        variant="outline" 
+                        className={cn(
+                          "text-[10px] capitalize",
+                          campaign.status === 'active' && "border-green-500 text-green-600 bg-green-50",
+                          campaign.status === 'completed' && "border-blue-500 text-blue-600 bg-blue-50",
+                          campaign.status === 'draft' && "border-gray-400 text-gray-500 bg-gray-50"
+                        )}
+                      >
+                        {campaign.status}
+                      </Badge>
+                    </td>
+                    <td className="text-right px-6 py-4 font-mono font-bold text-foreground">
+                      {campaign.totalViews.toLocaleString()}
+                    </td>
+                    <td className="text-right px-6 py-4 font-mono text-foreground">
+                      {campaign.deliverables}
+                    </td>
+                    {!presentationMode && (
+                      <td className="text-right px-6 py-4 font-mono text-foreground">
+                        ${campaign.spent.toLocaleString()}
+                      </td>
+                    )}
+                    <td className="text-right px-6 py-4">
+                      <Link href={`/campaign/${campaign.id}`}>
+                        <ChevronRight size={14} className="text-muted-foreground hover:text-foreground transition-colors" />
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
 
-        {/* Recent Activity */}
-        <div className="bg-card border border-border rounded-lg p-4">
-          <h3 className="text-sm font-semibold text-foreground mb-4">Recent Activity</h3>
-          <div className="space-y-3">
-            {recentActivity.map(activity => (
-              <div key={activity.id} className="flex items-start gap-3 p-3 rounded-lg bg-secondary/30 border border-border/50">
-                <div
-                  className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${
-                    activity.type === 'deliverable' ? 'bg-blue-400' : 'bg-green-400'
-                  }`}
-                />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm text-foreground">{activity.message}</p>
-                  <div className="flex items-center gap-2 mt-1">
-                    <Badge variant="outline" className="text-[10px] border-border">
-                      {activity.campaign}
-                    </Badge>
-                    <span className="text-xs text-muted-foreground">{activity.timestamp}</span>
-                  </div>
-                </div>
-              </div>
-            ))}
+        {/* Top Clients */}
+        <div className="bg-card border border-border rounded-xl overflow-hidden">
+          <div className="px-6 py-4 border-b border-border/50">
+            <h3 className="text-sm font-semibold text-foreground">Top Clients</h3>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="border-b border-border/50 bg-secondary/30">
+                  <th className="text-left px-6 py-3 text-muted-foreground font-medium">Client</th>
+                  <th className="text-right px-6 py-3 text-muted-foreground font-medium">Campaigns</th>
+                  <th className="text-right px-6 py-3 text-muted-foreground font-medium">Total Views</th>
+                  {!presentationMode && <th className="text-right px-6 py-3 text-muted-foreground font-medium">Total Spend</th>}
+                </tr>
+              </thead>
+              <tbody>
+                {TOP_CLIENTS.map((client, idx) => (
+                  <tr key={idx} className="border-b border-border/50 hover:bg-secondary/40 transition-colors">
+                    <td className="px-6 py-4 font-medium text-foreground">{client.name}</td>
+                    <td className="text-right px-6 py-4 font-mono text-foreground">{client.campaigns}</td>
+                    <td className="text-right px-6 py-4 font-mono font-bold text-foreground">{client.views.toLocaleString()}</td>
+                    {!presentationMode && (
+                      <td className="text-right px-6 py-4 font-mono text-foreground">${client.totalSpend.toLocaleString()}</td>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       </div>

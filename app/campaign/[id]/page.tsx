@@ -14,6 +14,9 @@ import {
   ChevronDown,
   Lock,
   Settings,
+  X,
+  RefreshCw,
+  Upload,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -66,10 +69,16 @@ export default function CampaignDetailPage({ params }: { params: { id: string } 
   const [showNewDeliverableDialog, setShowNewDeliverableDialog] = useState(false)
   const [visibleColumns, setVisibleColumns] = useState({
     views: true,
+    likes: false,
+    comments: false,
+    shares: false,
+    engagements: true,
+    engagementRate: false,
     internalCost: true,
-    externalCost: true,
-    cpm: true,
-    profit: true,
+    clientCost: true,
+    profitMargin: true,
+    internalCpm: false,
+    externalCpm: true,
   })
 
   const toggleColumnVisibility = (column: keyof typeof visibleColumns) => {
@@ -97,24 +106,30 @@ export default function CampaignDetailPage({ params }: { params: { id: string } 
             <span className="font-semibold text-foreground">Q1 Gaming Push</span>
           </div>
 
-          {/* Title & Actions */}
+          {/* Title & Progress */}
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-foreground">Q1 Gaming Push</h1>
+              <div className="flex items-center gap-3 mt-2">
+                <div className="w-32 h-1.5 bg-secondary rounded-full overflow-hidden">
+                  <div className="h-full bg-primary rounded-full" style={{ width: '100%' }} />
+                </div>
+                <span className="text-xs text-muted-foreground">7/7 deliverables completed</span>
+              </div>
             </div>
-            {/* Action Bar with Ghost Buttons */}
+            {/* Action Bar */}
             <div className="flex items-center gap-1.5">
-              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors">
-                <Download size={14} />
+              <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs border-border">
+                <X size={13} /> Close
               </Button>
-              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors">
-                <MessageSquare size={14} />
+              <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs border-border">
+                <RefreshCw size={13} /> Refresh Data
               </Button>
-              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors">
-                <Filter size={14} />
+              <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs border-border">
+                <Upload size={13} /> Import URLs
               </Button>
               <Button size="sm" onClick={() => setShowNewDeliverableDialog(true)} className="h-8 bg-primary text-primary-foreground hover:bg-primary/90 gap-1.5 text-xs font-medium px-3">
-                <Plus size={13} /> New Deliverable
+                <Plus size={13} /> Add Deliverable
               </Button>
             </div>
           </div>
@@ -148,26 +163,31 @@ export default function CampaignDetailPage({ params }: { params: { id: string } 
           {/* OVERVIEW TAB */}
           {activeTab === 'overview' && (
             <div className="space-y-6">
-              {/* KPI ROW — 4 Cards (Performance Focus) */}
-              <div className="grid grid-cols-4 gap-4">
-                <div className="bg-card border border-border rounded-xl p-5 font-[family-name:var(--font-inter)]">
+              {/* KPI ROW — 5 Cards */}
+              <div className="grid grid-cols-5 gap-4">
+                <div className="bg-card border border-border rounded-xl p-5">
                   <p className="text-xs text-muted-foreground font-medium mb-2">Total Views</p>
-                  <p className="text-3xl font-bold text-foreground font-mono">2,781,450</p>
+                  <p className="text-2xl font-bold text-foreground font-mono">2,781,450</p>
                 </div>
 
-                <div className="bg-card border border-border rounded-xl p-5 font-[family-name:var(--font-inter)]">
-                  <p className="text-xs text-muted-foreground font-medium mb-2">Total Pieces of Content</p>
-                  <p className="text-3xl font-bold text-foreground font-mono">24</p>
-                </div>
-
-                <div className="bg-card border border-border rounded-xl p-5 font-[family-name:var(--font-inter)]">
-                  <p className="text-xs text-muted-foreground font-medium mb-2">Total Current CPM</p>
-                  <p className="text-3xl font-bold text-foreground font-mono">$42.15</p>
-                </div>
-
-                <div className="bg-card border border-border rounded-xl p-5 font-[family-name:var(--font-inter)]">
+                <div className="bg-card border border-border rounded-xl p-5">
                   <p className="text-xs text-muted-foreground font-medium mb-2">Total Engagements</p>
-                  <p className="text-3xl font-bold text-foreground font-mono">158,900</p>
+                  <p className="text-2xl font-bold text-foreground font-mono">158,900</p>
+                </div>
+
+                <div className="bg-card border border-border rounded-xl p-5">
+                  <p className="text-xs text-muted-foreground font-medium mb-2">Pieces of Content</p>
+                  <p className="text-2xl font-bold text-foreground font-mono">24</p>
+                </div>
+
+                <div className={cn("bg-card border border-border rounded-xl p-5", presentationMode && "opacity-40")}>
+                  <p className="text-xs text-muted-foreground font-medium mb-2">Total Client Cost</p>
+                  <p className="text-2xl font-bold text-foreground font-mono">{presentationMode ? '••••••' : '$128,450'}</p>
+                </div>
+
+                <div className="bg-card border border-border rounded-xl p-5">
+                  <p className="text-xs text-muted-foreground font-medium mb-2">External CPM</p>
+                  <p className="text-2xl font-bold text-foreground font-mono">$46.18</p>
                 </div>
               </div>
 
@@ -181,40 +201,24 @@ export default function CampaignDetailPage({ params }: { params: { id: string } 
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" size="sm" className="h-7 gap-1.5 text-xs px-2">
-                        <Settings size={12} /> View Settings
+                        <Settings size={12} /> Columns
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-48">
-                      <DropdownMenuCheckboxItem
-                        checked={visibleColumns.views}
-                        onCheckedChange={() => toggleColumnVisibility('views')}
-                      >
-                        Views
-                      </DropdownMenuCheckboxItem>
-                      <DropdownMenuCheckboxItem
-                        checked={visibleColumns.internalCost}
-                        onCheckedChange={() => toggleColumnVisibility('internalCost')}
-                      >
-                        Internal Cost
-                      </DropdownMenuCheckboxItem>
-                      <DropdownMenuCheckboxItem
-                        checked={visibleColumns.externalCost}
-                        onCheckedChange={() => toggleColumnVisibility('externalCost')}
-                      >
-                        External Cost (Client Price)
-                      </DropdownMenuCheckboxItem>
-                      <DropdownMenuCheckboxItem
-                        checked={visibleColumns.cpm}
-                        onCheckedChange={() => toggleColumnVisibility('cpm')}
-                      >
-                        CPM
-                      </DropdownMenuCheckboxItem>
-                      <DropdownMenuCheckboxItem
-                        checked={visibleColumns.profit}
-                        onCheckedChange={() => toggleColumnVisibility('profit')}
-                      >
-                        Profit
-                      </DropdownMenuCheckboxItem>
+                    <DropdownMenuContent align="end" className="w-52">
+                      <div className="px-2 py-1.5 text-[10px] font-semibold text-muted-foreground uppercase">Performance</div>
+                      <DropdownMenuCheckboxItem checked={visibleColumns.views} onCheckedChange={() => toggleColumnVisibility('views')}>Views</DropdownMenuCheckboxItem>
+                      <DropdownMenuCheckboxItem checked={visibleColumns.likes} onCheckedChange={() => toggleColumnVisibility('likes')}>Likes</DropdownMenuCheckboxItem>
+                      <DropdownMenuCheckboxItem checked={visibleColumns.comments} onCheckedChange={() => toggleColumnVisibility('comments')}>Comments</DropdownMenuCheckboxItem>
+                      <DropdownMenuCheckboxItem checked={visibleColumns.shares} onCheckedChange={() => toggleColumnVisibility('shares')}>Shares</DropdownMenuCheckboxItem>
+                      <DropdownMenuCheckboxItem checked={visibleColumns.engagements} onCheckedChange={() => toggleColumnVisibility('engagements')}>Engagements</DropdownMenuCheckboxItem>
+                      <DropdownMenuCheckboxItem checked={visibleColumns.engagementRate} onCheckedChange={() => toggleColumnVisibility('engagementRate')}>Engagement Rate (ER%)</DropdownMenuCheckboxItem>
+                      <DropdownMenuSeparator />
+                      <div className="px-2 py-1.5 text-[10px] font-semibold text-muted-foreground uppercase">Financials</div>
+                      <DropdownMenuCheckboxItem checked={visibleColumns.internalCost} onCheckedChange={() => toggleColumnVisibility('internalCost')}>Internal Cost</DropdownMenuCheckboxItem>
+                      <DropdownMenuCheckboxItem checked={visibleColumns.clientCost} onCheckedChange={() => toggleColumnVisibility('clientCost')}>Client Cost</DropdownMenuCheckboxItem>
+                      <DropdownMenuCheckboxItem checked={visibleColumns.profitMargin} onCheckedChange={() => toggleColumnVisibility('profitMargin')}>Profit Margin</DropdownMenuCheckboxItem>
+                      <DropdownMenuCheckboxItem checked={visibleColumns.internalCpm} onCheckedChange={() => toggleColumnVisibility('internalCpm')}>Internal CPM</DropdownMenuCheckboxItem>
+                      <DropdownMenuCheckboxItem checked={visibleColumns.externalCpm} onCheckedChange={() => toggleColumnVisibility('externalCpm')}>External CPM</DropdownMenuCheckboxItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
@@ -223,103 +227,77 @@ export default function CampaignDetailPage({ params }: { params: { id: string } 
                   <table className="w-full text-xs">
                     <thead>
                       <tr className="border-b border-border/50 bg-secondary/30">
-                        <th className="text-center px-4 py-3 text-muted-foreground font-medium">
-                          <div className="flex items-center justify-center gap-1">Platform <ChevronRight size={10} /></div>
-                        </th>
-                        <th className="text-left px-5 py-3 text-muted-foreground font-medium">
-                          <div className="flex items-center gap-1">Creator <ChevronRight size={10} /></div>
-                        </th>
-                        <th className="text-left px-5 py-3 text-muted-foreground font-medium">
-                          <div className="flex items-center gap-1">Type <ChevronRight size={10} /></div>
-                        </th>
-                        {visibleColumns.views && (
-                          <th className="text-right px-5 py-3 text-muted-foreground font-medium">
-                            <div className="flex items-center justify-end gap-1">Views <ChevronRight size={10} /></div>
-                          </th>
-                        )}
-                        <th className="text-right px-5 py-3 text-muted-foreground font-medium">
-                          <div className="flex items-center justify-end gap-1">Engagements <ChevronRight size={10} /></div>
-                        </th>
-                        {visibleColumns.cpm && (
-                          <th className="text-right px-5 py-3 text-muted-foreground font-medium">
-                            <div className="flex items-center justify-end gap-1">CPM <ChevronRight size={10} /></div>
-                          </th>
-                        )}
-                        {!presentationMode && visibleColumns.internalCost && (
-                          <th className="text-right px-5 py-3 text-muted-foreground font-medium">
-                            <div className="flex items-center justify-end gap-1">Int. Cost <ChevronRight size={10} /></div>
-                          </th>
-                        )}
-                        {!presentationMode && visibleColumns.externalCost && (
-                          <th className="text-right px-5 py-3 text-muted-foreground font-medium">
-                            <div className="flex items-center justify-end gap-1">Ext. Cost <ChevronRight size={10} /></div>
-                          </th>
-                        )}
-                        {!presentationMode && visibleColumns.profit && (
-                          <th className="text-right px-5 py-3 text-muted-foreground font-medium">
-                            <div className="flex items-center justify-end gap-1">Profit <ChevronRight size={10} /></div>
-                          </th>
-                        )}
+                        <th className="text-center px-4 py-3 text-muted-foreground font-medium text-xs">Platform</th>
+                        <th className="text-left px-5 py-3 text-muted-foreground font-medium text-xs">Creator</th>
+                        <th className="text-left px-5 py-3 text-muted-foreground font-medium text-xs">Type</th>
+                        {visibleColumns.views && <th className="text-right px-4 py-3 text-muted-foreground font-medium text-xs">Views</th>}
+                        {visibleColumns.likes && <th className="text-right px-4 py-3 text-muted-foreground font-medium text-xs">Likes</th>}
+                        {visibleColumns.comments && <th className="text-right px-4 py-3 text-muted-foreground font-medium text-xs">Comments</th>}
+                        {visibleColumns.shares && <th className="text-right px-4 py-3 text-muted-foreground font-medium text-xs">Shares</th>}
+                        {visibleColumns.engagements && <th className="text-right px-4 py-3 text-muted-foreground font-medium text-xs">Engagements</th>}
+                        {visibleColumns.engagementRate && <th className="text-right px-4 py-3 text-muted-foreground font-medium text-xs">ER%</th>}
+                        {visibleColumns.internalCost && <th className="text-right px-4 py-3 text-muted-foreground font-medium text-xs">{presentationMode ? <Lock size={10} /> : 'Int. Cost'}</th>}
+                        {visibleColumns.clientCost && <th className="text-right px-4 py-3 text-muted-foreground font-medium text-xs">{presentationMode ? <Lock size={10} /> : 'Client Cost'}</th>}
+                        {visibleColumns.profitMargin && <th className="text-right px-4 py-3 text-muted-foreground font-medium text-xs">{presentationMode ? <Lock size={10} /> : 'Profit'}</th>}
+                        {visibleColumns.internalCpm && <th className="text-right px-4 py-3 text-muted-foreground font-medium text-xs">{presentationMode ? <Lock size={10} /> : 'Int. CPM'}</th>}
+                        {visibleColumns.externalCpm && <th className="text-right px-4 py-3 text-muted-foreground font-medium text-xs">Ext. CPM</th>}
                       </tr>
                     </thead>
                     <tbody>
-                      {MOCK_DELIVERABLES.slice(0, 6).map((d, idx) => {
-                        const views = d.youtube?.avg30dLong || d.tiktok?.views || 0
-                        const engagements = Math.floor((views * 0.054))
-                        const cpm = d.cpm || 42.15
+                      {MOCK_DELIVERABLES.slice(0, 7).map((d, idx) => {
+                        const views = d.youtube?.avg30dLong || d.tiktok?.views || 250000 + idx * 50000
+                        const likes = Math.floor(views * 0.042)
+                        const comments = Math.floor(views * 0.008)
+                        const shares = Math.floor(views * 0.004)
+                        const engagements = likes + comments + shares
+                        const engagementRate = ((engagements / views) * 100).toFixed(2)
+                        const internalCost = d.internalPrice
+                        const clientCost = d.clientPrice
+                        const profit = clientCost - internalCost
+                        const internalCpm = ((internalCost / views) * 1000).toFixed(2)
+                        const externalCpm = ((clientCost / views) * 1000).toFixed(2)
 
                         return (
-                          <tr key={idx} className="border-b border-border/50 hover:bg-secondary/40 transition-colors">
+                          <tr key={idx} className="border-b border-border/50 hover:bg-secondary/40 transition-colors text-xs">
                             <td className="text-center px-4 py-3">
-                              {d.creator.platform === 'YouTube' && PLATFORM_ICONS.YouTube}
-                              {d.creator.platform === 'Twitch' && PLATFORM_ICONS.Twitch}
-                              {d.creator.platform === 'TikTok' && PLATFORM_ICONS.TikTok}
-                              {d.creator.platform === 'Instagram' && PLATFORM_ICONS.Instagram}
+                              {PLATFORM_ICONS[d.creator.platform] || PLATFORM_ICONS.YouTube}
                             </td>
                             <td className="px-5 py-3">
                               <div className="flex items-center gap-2.5">
                                 <div className="w-5 h-5 rounded-full bg-primary/15 flex items-center justify-center shrink-0">
                                   <span className="text-primary text-[8px] font-bold">{d.creator.avatar}</span>
                                 </div>
-                                <p className="font-medium text-foreground text-xs truncate">{d.creator.handle.replace('@', '')}</p>
+                                <p className="font-medium text-foreground truncate">{d.creator.handle.replace('@', '')}</p>
                               </div>
                             </td>
-                            <td className="px-5 py-3 text-muted-foreground text-xs">{d.contentType}</td>
-                            {visibleColumns.views && (
-                              <td className="text-right px-5 py-3 font-mono font-bold text-foreground">
-                                {views.toLocaleString()}
+                            <td className="px-5 py-3 text-muted-foreground">{d.contentType}</td>
+                            {visibleColumns.views && <td className="text-right px-4 py-3 font-mono font-bold text-foreground">{views.toLocaleString()}</td>}
+                            {visibleColumns.likes && <td className="text-right px-4 py-3 font-mono text-foreground">{likes.toLocaleString()}</td>}
+                            {visibleColumns.comments && <td className="text-right px-4 py-3 font-mono text-foreground">{comments.toLocaleString()}</td>}
+                            {visibleColumns.shares && <td className="text-right px-4 py-3 font-mono text-foreground">{shares.toLocaleString()}</td>}
+                            {visibleColumns.engagements && <td className="text-right px-4 py-3 font-mono font-bold text-foreground">{engagements.toLocaleString()}</td>}
+                            {visibleColumns.engagementRate && <td className="text-right px-4 py-3 font-mono text-foreground">{engagementRate}%</td>}
+                            {visibleColumns.internalCost && (
+                              <td className="text-right px-4 py-3 font-mono text-foreground">
+                                {presentationMode ? <span className="text-muted-foreground blur-sm select-none">$••••</span> : `$${internalCost.toLocaleString()}`}
                               </td>
                             )}
-                            <td className="text-right px-5 py-3 font-mono font-bold text-foreground">
-                              {engagements.toLocaleString()}
-                            </td>
-                            {visibleColumns.cpm && (
-                              <td className="text-right px-5 py-3 font-mono font-bold text-foreground">
-                                ${cpm.toFixed(2)}
+                            {visibleColumns.clientCost && (
+                              <td className="text-right px-4 py-3 font-mono text-foreground">
+                                {presentationMode ? <span className="text-muted-foreground blur-sm select-none">$••••</span> : `$${clientCost.toLocaleString()}`}
                               </td>
                             )}
-                            {!presentationMode && visibleColumns.internalCost && (
-                              <td className="text-right px-5 py-3 font-mono text-foreground">
-                                ${d.internalPrice.toLocaleString()}
+                            {visibleColumns.profitMargin && (
+                              <td className="text-right px-4 py-3 font-mono font-semibold text-emerald-600">
+                                {presentationMode ? <span className="text-muted-foreground blur-sm select-none">$••••</span> : `$${profit.toLocaleString()}`}
                               </td>
                             )}
-                            {!presentationMode && visibleColumns.externalCost && (
-                              <td className="text-right px-5 py-3 font-mono text-foreground">
-                                ${d.clientPrice.toLocaleString()}
+                            {visibleColumns.internalCpm && (
+                              <td className="text-right px-4 py-3 font-mono text-foreground">
+                                {presentationMode ? <span className="text-muted-foreground blur-sm select-none">$••</span> : `$${internalCpm}`}
                               </td>
                             )}
-                            {!presentationMode && visibleColumns.profit && (
-                              <td className="text-right px-5 py-3 font-mono font-semibold text-emerald-600">
-                                ${(d.clientPrice - d.internalPrice).toLocaleString()}
-                              </td>
-                            )}
-                            {presentationMode && (visibleColumns.internalCost || visibleColumns.externalCost || visibleColumns.profit) && (
-                              <>
-                                {visibleColumns.internalCost && <td className="text-right px-5 py-3"><Lock size={12} className="text-muted-foreground" /></td>}
-                                {visibleColumns.externalCost && <td className="text-right px-5 py-3"><Lock size={12} className="text-muted-foreground" /></td>}
-                                {visibleColumns.profit && <td className="text-right px-5 py-3"><Lock size={12} className="text-muted-foreground" /></td>}
-                              </>
-                            )}
+                            {visibleColumns.externalCpm && <td className="text-right px-4 py-3 font-mono text-foreground">${externalCpm}</td>}
                           </tr>
                         )
                       })}
