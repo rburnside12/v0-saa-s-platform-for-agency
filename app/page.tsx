@@ -1,12 +1,23 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import { AppShell } from '@/components/app-shell'
 import { MOCK_CAMPAIGNS } from '@/lib/mock-data'
 import { usePresentationMode } from '@/contexts/presentation-mode'
 import { cn } from '@/lib/utils'
-import { ChevronRight, Lock, TrendingUp, Users, DollarSign, Percent, BarChart3 } from 'lucide-react'
+import { ChevronRight, Lock, TrendingUp, Users, DollarSign, Percent, BarChart3, Plus } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog'
 
 // Mock top clients data
 const TOP_CLIENTS = [
@@ -18,6 +29,7 @@ const TOP_CLIENTS = [
 
 export default function AgencyDashboard() {
   const { presentationMode } = usePresentationMode()
+  const [showNewCampaignDialog, setShowNewCampaignDialog] = useState(false)
 
   // Calculate Agency-Wide KPIs (non-rounded, detailed)
   const totalViews = MOCK_CAMPAIGNS.reduce((a, c) => a + c.totalViews, 0)
@@ -30,9 +42,17 @@ export default function AgencyDashboard() {
     <AppShell>
       <div className="p-6 space-y-6">
         {/* Header */}
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Agency Overview</h1>
-          <p className="text-sm text-muted-foreground mt-1">High-level performance across all campaigns</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">Agency Overview</h1>
+            <p className="text-sm text-muted-foreground mt-1">High-level performance across all campaigns</p>
+          </div>
+          <Button 
+            onClick={() => setShowNewCampaignDialog(true)}
+            className="bg-primary text-primary-foreground h-8 text-xs gap-1.5"
+          >
+            <Plus size={13} /> New Campaign
+          </Button>
         </div>
 
         {/* KPI Bento Row — 5 Cards */}
@@ -173,6 +193,36 @@ export default function AgencyDashboard() {
             </table>
           </div>
         </div>
+
+        {/* New Campaign Dialog */}
+        <Dialog open={showNewCampaignDialog} onOpenChange={setShowNewCampaignDialog}>
+          <DialogContent className="bg-card border-border max-w-md">
+            <DialogHeader>
+              <DialogTitle className="text-foreground">Create New Campaign</DialogTitle>
+              <DialogDescription className="text-muted-foreground text-xs">
+                Enter campaign details to get started.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <label className="text-xs font-medium text-muted-foreground block mb-1.5">Campaign Name</label>
+                <Input placeholder="e.g., Q2 Gaming Push" className="h-8 text-xs border-border" />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground block mb-1.5">Client</label>
+                <Input placeholder="e.g., Epic Games" className="h-8 text-xs border-border" />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground block mb-1.5">Total Budget</label>
+                <Input placeholder="e.g., 100000" className="h-8 text-xs border-border" type="number" />
+              </div>
+            </div>
+            <DialogFooter className="gap-2">
+              <Button variant="outline" size="sm" className="h-7 text-xs border-border">Cancel</Button>
+              <Button size="sm" className="h-7 text-xs bg-primary text-primary-foreground">Create Campaign</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </AppShell>
   )

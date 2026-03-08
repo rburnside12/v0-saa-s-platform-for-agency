@@ -6,118 +6,40 @@ import { MOCK_CAMPAIGNS } from '@/lib/mock-data'
 import { usePresentationMode } from '@/contexts/presentation-mode'
 import {
   Search,
-  Filter,
   Plus,
-  Calendar,
+  ChevronRight,
   ChevronDown,
-  Package,
-  TrendingUp,
-  DollarSign,
-  Eye,
-  BarChart2,
-  ArrowUpRight,
-  MoreHorizontal,
-  Tag,
-  CheckSquare,
-  Square,
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import Link from 'next/link'
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogDescription,
+  DialogFooter,
 } from '@/components/ui/dialog'
 
-const ALL_CLIENTS = ['Epic Games', 'Riot Games', 'Nike', 'AMD']
-const ALL_TAGS = ['Q1', 'Q2', 'Gaming', 'Esports', 'Influencer', 'Launch', 'Lifestyle', 'Fashion', 'Tech', 'Hardware']
-
-function AggregateSummary({ campaigns }: { campaigns: typeof MOCK_CAMPAIGNS }) {
-  const { presentationMode } = usePresentationMode()
-  const totalViews = campaigns.reduce((a, c) => a + c.totalViews, 0)
-  const totalBudget = campaigns.reduce((a, c) => a + c.budget, 0)
-  const totalDeliverables = campaigns.reduce((a, c) => a + c.deliverables, 0)
-  const avgEr = (campaigns.reduce((a, c) => a + c.avgEngagementRate, 0) / campaigns.length).toFixed(1)
-  const avgMargin = (campaigns.reduce((a, c) => a + c.marginPct, 0) / campaigns.length).toFixed(1)
-
-  return (
-    <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2 text-xs font-medium text-primary">
-          <Package size={13} />
-          Bundle Aggregate — {campaigns.length} Campaign{campaigns.length !== 1 ? 's' : ''} Selected
-        </div>
-      </div>
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        <div>
-          <div className="text-[10px] text-muted-foreground mb-0.5">Total Views</div>
-          <div className="font-mono tabular-nums text-sm font-semibold text-foreground">
-            {(totalViews / 1000000).toFixed(1)}M
-          </div>
-        </div>
-        <div>
-          <div className="text-[10px] text-muted-foreground mb-0.5">Deliverables</div>
-          <div className="font-mono tabular-nums text-sm font-semibold text-foreground">{totalDeliverables}</div>
-        </div>
-        <div>
-          <div className="text-[10px] text-muted-foreground mb-0.5">Avg. ER%</div>
-          <div className="font-mono tabular-nums text-sm font-semibold text-foreground">{avgEr}%</div>
-        </div>
-        {!presentationMode && (
-          <>
-            <div>
-              <div className="text-[10px] text-muted-foreground mb-0.5">Total Budget</div>
-              <div className="font-mono tabular-nums text-sm font-semibold text-foreground">${(totalBudget / 1000).toFixed(0)}K</div>
-            </div>
-            <div>
-              <div className="text-[10px] text-muted-foreground mb-0.5">Avg. Margin</div>
-              <div className="font-mono tabular-nums text-sm font-semibold text-emerald-400">{avgMargin}%</div>
-            </div>
-          </>
-        )}
-      </div>
-    </div>
-  )
+const PLATFORM_ICONS: Record<string, React.ReactNode> = {
+  YouTube: <svg className="w-3.5 h-3.5 fill-red-600" viewBox="0 0 24 24"><path d="M19.615 3.712c-1.899-.596-7.615-.596-9.514-.596s-7.615 0-9.514.596C.051 4.934.051 8.806.051 12s0 7.066.752 8.288c1.899.596 7.615.596 9.514.596s7.615 0 9.514-.596c.701-1.222.752-5.094.752-8.288 0-3.194 0-7.066-.752-8.288zM9.046 15.13V8.87c3.505.987 3.505 3.077 3.505 3.077 0 3.077 0 3.077-3.505 3.183z"/></svg>,
+  Twitch: <svg className="w-3.5 h-3.5 fill-purple-600" viewBox="0 0 24 24"><path d="M11 2H2v20h7v-5h4l4-4v-11h-6zm6 10l-3 3h-4v-3h7z"/></svg>,
+  TikTok: <svg className="w-3.5 h-3.5 fill-black dark:fill-white" viewBox="0 0 24 24"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 1 1-5.92-2.46v3.6a6.63 6.63 0 1 0 9.69 5.63V9.01a8.35 8.35 0 0 0 4.84-2.65z"/></svg>,
+  Instagram: <svg className="w-3.5 h-3.5 fill-pink-600" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.057-1.645.069-4.849.069-3.204 0-3.584-.012-4.849-.069-3.259-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073z"/><circle cx="12" cy="12" r="3.6" fill="currentColor"/><circle cx="18.406" cy="5.594" r="0.9" fill="currentColor"/></svg>,
+  X: <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24h-6.6l-5.165-6.75-5.91 6.75H2.556l7.73-8.835L1.488 2.25h6.75l4.915 6.516 5.495-6.516zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>,
 }
 
 export default function CampaignsPage() {
   const { presentationMode } = usePresentationMode()
   const [search, setSearch] = useState('')
-  const [selectedClients, setSelectedClients] = useState<string[]>([])
-  const [selectedTags, setSelectedTags] = useState<string[]>([])
-  const [selectedIds, setSelectedIds] = useState<string[]>([])
-  const [showAggregate, setShowAggregate] = useState(false)
+  const [showNewCampaignDialog, setShowNewCampaignDialog] = useState(false)
 
-  const filtered = MOCK_CAMPAIGNS.filter(c => {
-    const matchSearch = c.name.toLowerCase().includes(search.toLowerCase()) || c.client.toLowerCase().includes(search.toLowerCase())
-    const matchClient = selectedClients.length === 0 || selectedClients.includes(c.client)
-    const matchTag = selectedTags.length === 0 || c.tags.some(t => selectedTags.includes(t))
-    return matchSearch && matchClient && matchTag
-  })
-
-  function toggleSelect(id: string) {
-    setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
-  }
-
-  function toggleClient(client: string) {
-    setSelectedClients(prev => prev.includes(client) ? prev.filter(x => x !== client) : [...prev, client])
-  }
-
-  function toggleTag(tag: string) {
-    setSelectedTags(prev => prev.includes(tag) ? prev.filter(x => x !== tag) : [...prev, tag])
-  }
-
-  const bundledCampaigns = MOCK_CAMPAIGNS.filter(c => selectedIds.includes(c.id))
+  const filtered = MOCK_CAMPAIGNS.filter(c =>
+    c.name.toLowerCase().includes(search.toLowerCase()) || 
+    c.client.toLowerCase().includes(search.toLowerCase())
+  )
 
   return (
     <AppShell>
@@ -128,238 +50,122 @@ export default function CampaignsPage() {
             <h1 className="text-lg font-semibold text-foreground">Campaigns</h1>
             <p className="text-xs text-muted-foreground mt-0.5">{filtered.length} of {MOCK_CAMPAIGNS.length} campaigns</p>
           </div>
-          <Button size="sm" className="bg-primary text-primary-foreground h-8 text-xs gap-1.5">
+          <Button 
+            size="sm" 
+            onClick={() => setShowNewCampaignDialog(true)}
+            className="bg-primary text-primary-foreground h-8 text-xs gap-1.5"
+          >
             <Plus size={13} /> New Campaign
           </Button>
         </div>
 
-        {/* Filters */}
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="relative">
-            <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Search campaigns..."
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              className="h-8 pl-8 text-xs bg-secondary border-border w-56"
-            />
-          </div>
-
-          {/* Client Filter */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="h-8 text-xs border-border bg-secondary gap-1.5">
-                <Users size={12} /> Client {selectedClients.length > 0 && `(${selectedClients.length})`}
-                <ChevronDown size={11} />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="bg-card border-border w-44">
-              {ALL_CLIENTS.map(c => (
-                <DropdownMenuItem key={c} className="text-xs gap-2 cursor-pointer" onClick={() => toggleClient(c)}>
-                  {selectedClients.includes(c) ? <CheckSquare size={12} className="text-primary" /> : <Square size={12} />}
-                  {c}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          {/* Tag Filter */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="h-8 text-xs border-border bg-secondary gap-1.5">
-                <Tag size={12} /> Tags {selectedTags.length > 0 && `(${selectedTags.length})`}
-                <ChevronDown size={11} />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="bg-card border-border w-44">
-              {ALL_TAGS.map(t => (
-                <DropdownMenuItem key={t} className="text-xs gap-2 cursor-pointer" onClick={() => toggleTag(t)}>
-                  {selectedTags.includes(t) ? <CheckSquare size={12} className="text-primary" /> : <Square size={12} />}
-                  {t}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          {/* Active filters */}
-          {(selectedClients.length > 0 || selectedTags.length > 0) && (
-            <button
-              className="text-xs text-muted-foreground hover:text-foreground underline"
-              onClick={() => { setSelectedClients([]); setSelectedTags([]) }}
-            >
-              Clear filters
-            </button>
-          )}
-
-          <div className="flex-1" />
-
-          {selectedIds.length >= 2 && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-8 text-xs border-primary/40 text-primary bg-primary/10 gap-1.5"
-              onClick={() => setShowAggregate(true)}
-            >
-              <Package size={12} /> Bundle {selectedIds.length} Campaigns
-            </Button>
-          )}
+        {/* Search */}
+        <div className="relative">
+          <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Search campaigns or clients..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="h-8 pl-8 text-xs bg-secondary border-border w-80"
+          />
         </div>
 
         {/* Table */}
-        <div className="bg-card border border-border rounded-lg overflow-hidden">
+        <div className="bg-card border border-border rounded-xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
               <thead>
-                <tr className="border-b border-border bg-secondary/50">
-                  <th className="w-8 px-3 py-2.5"></th>
-                  <th className="text-left text-muted-foreground font-medium px-4 py-2.5">Campaign</th>
-                  <th className="text-left text-muted-foreground font-medium px-4 py-2.5">Client</th>
-                  <th className="text-left text-muted-foreground font-medium px-4 py-2.5">Status</th>
-                  <th className="text-left text-muted-foreground font-medium px-4 py-2.5">Platforms</th>
-                  <th className="text-right text-muted-foreground font-medium px-4 py-2.5">Views</th>
-                  <th className="text-right text-muted-foreground font-medium px-4 py-2.5">ER%</th>
-                  <th className="text-right text-muted-foreground font-medium px-4 py-2.5">Deliverables</th>
-                  {!presentationMode && <th className="text-right text-muted-foreground font-medium px-4 py-2.5">Budget</th>}
-                  {!presentationMode && <th className="text-right text-muted-foreground font-medium px-4 py-2.5">Margin</th>}
-                  <th className="w-8 px-3 py-2.5"></th>
+                <tr className="border-b border-border bg-secondary/30">
+                  <th className="text-left text-muted-foreground font-medium px-6 py-3">Campaign Name</th>
+                  <th className="text-left text-muted-foreground font-medium px-6 py-3">Client</th>
+                  <th className="text-left text-muted-foreground font-medium px-6 py-3">Status</th>
+                  <th className="text-center text-muted-foreground font-medium px-6 py-3">Platforms</th>
+                  <th className="text-right text-muted-foreground font-medium px-6 py-3">Views</th>
+                  <th className="text-right text-muted-foreground font-medium px-6 py-3">ER%</th>
+                  {!presentationMode && <th className="text-right text-muted-foreground font-medium px-6 py-3">Budget</th>}
+                  <th className="w-8"></th>
                 </tr>
               </thead>
               <tbody>
-                {filtered.map(c => {
-                  const selected = selectedIds.includes(c.id)
-                  return (
-                    <tr
-                      key={c.id}
-                      className={`border-b border-border/50 hover:bg-secondary/30 transition-colors ${selected ? 'bg-primary/5' : ''}`}
-                    >
-                      <td className="px-3 py-3">
-                        <button onClick={() => toggleSelect(c.id)}>
-                          {selected
-                            ? <CheckSquare size={13} className="text-primary" />
-                            : <Square size={13} className="text-muted-foreground" />
-                          }
-                        </button>
+                {filtered.map(c => (
+                  <tr key={c.id} className="border-b border-border/50 hover:bg-secondary/40 transition-colors">
+                    <td className="px-6 py-4">
+                      <Link href={`/campaign/${c.id}`} className="text-foreground hover:text-primary transition-colors font-medium">
+                        {c.name}
+                      </Link>
+                    </td>
+                    <td className="px-6 py-4 text-muted-foreground">{c.client}</td>
+                    <td className="px-6 py-4">
+                      <Badge className={`text-[10px] font-medium ${
+                        c.status === 'active' ? 'bg-green-100 text-green-700 border-green-200' :
+                        c.status === 'completed' ? 'bg-blue-100 text-blue-700 border-blue-200' :
+                        'bg-gray-100 text-gray-700 border-gray-200'
+                      }`}>
+                        {c.status.charAt(0).toUpperCase() + c.status.slice(1)}
+                      </Badge>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex gap-2 justify-center">
+                        {c.platforms.map(p => (
+                          <div key={p} title={p} className="flex items-center justify-center">
+                            {PLATFORM_ICONS[p]}
+                          </div>
+                        ))}
+                      </div>
+                    </td>
+                    <td className="text-right px-6 py-4 font-mono font-bold text-foreground">
+                      {(c.totalViews / 1000000).toFixed(1)}M
+                    </td>
+                    <td className="text-right px-6 py-4 font-mono text-foreground">
+                      {c.avgEngagementRate}%
+                    </td>
+                    {!presentationMode && (
+                      <td className="text-right px-6 py-4 font-mono text-foreground">
+                        ${(c.budget / 1000).toFixed(0)}K
                       </td>
-                      <td className="px-4 py-3">
-                        <Link href={`/campaign/${c.id}`} className="text-foreground hover:text-primary transition-colors font-medium">
-                          {c.name}
-                        </Link>
-                        <div className="flex gap-1 mt-1 flex-wrap">
-                          {c.tags.slice(0, 3).map(t => (
-                            <span key={t} className="text-[10px] px-1.5 py-0.5 bg-secondary rounded text-muted-foreground">{t}</span>
-                          ))}
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">{c.client}</td>
-                      <td className="px-4 py-3">
-                        <Badge className={`text-[10px] ${
-                          c.status === 'active' ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/20' :
-                          c.status === 'completed' ? 'bg-blue-500/15 text-blue-400 border-blue-500/20' :
-                          'bg-yellow-500/15 text-yellow-400 border-yellow-500/20'
-                        }`}>
-                          {c.status}
-                        </Badge>
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex gap-1 flex-wrap">
-                          {c.platforms.map(p => (
-                            <PlatformBadge key={p} platform={p} />
-                          ))}
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-right font-mono tabular-nums text-foreground whitespace-nowrap">
-                        {c.totalViews > 0 ? `${(c.totalViews / 1000000).toFixed(1)}M` : '—'}
-                      </td>
-                      <td className="px-4 py-3 text-right font-mono tabular-nums text-foreground">
-                        {c.avgEngagementRate > 0 ? `${c.avgEngagementRate}%` : '—'}
-                      </td>
-                      <td className="px-4 py-3 text-right font-mono tabular-nums text-foreground">{c.deliverables}</td>
-                      {!presentationMode && (
-                        <td className="px-4 py-3 text-right font-mono tabular-nums text-foreground whitespace-nowrap">
-                          ${(c.budget / 1000).toFixed(0)}K
-                        </td>
-                      )}
-                      {!presentationMode && (
-                        <td className="px-4 py-3 text-right font-mono tabular-nums text-emerald-400">{c.marginPct}%</td>
-                      )}
-                      <td className="px-3 py-3">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground">
-                              <MoreHorizontal size={13} />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="bg-card border-border w-36">
-                            <DropdownMenuItem asChild className="text-xs gap-2">
-                              <Link href={`/campaign/${c.id}`}>
-                                <ArrowUpRight size={12} /> Open
-                              </Link>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem asChild className="text-xs gap-2">
-                              <Link href={`/analytics?campaigns=${c.id}`}>
-                                <BarChart2 size={12} /> Analytics
-                              </Link>
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </td>
-                    </tr>
-                  )
-                })}
+                    )}
+                    <td className="px-6 py-4">
+                      <Link href={`/campaign/${c.id}`}>
+                        <ChevronRight size={14} className="text-muted-foreground hover:text-foreground transition-colors" />
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
         </div>
-
-        {/* Aggregate Dialog */}
-        <Dialog open={showAggregate} onOpenChange={setShowAggregate}>
-          <DialogContent className="bg-card border-border max-w-2xl">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2 text-foreground text-sm">
-                <Package size={16} className="text-primary" />
-                Campaign Bundle — Aggregate View
-              </DialogTitle>
-              <DialogDescription className="text-muted-foreground text-xs">
-                Combined performance metrics across {bundledCampaigns.length} selected campaigns.
-              </DialogDescription>
-            </DialogHeader>
-            {bundledCampaigns.length > 0 && <AggregateSummary campaigns={bundledCampaigns} />}
-            <div className="space-y-1">
-              {bundledCampaigns.map(c => (
-                <div key={c.id} className="flex items-center justify-between text-xs py-2 border-b border-border/50">
-                  <div>
-                    <div className="text-foreground font-medium">{c.name}</div>
-                    <div className="text-muted-foreground">{c.client}</div>
-                  </div>
-                  <div className="text-right">
-                    <div className="font-mono tabular-nums text-foreground">{(c.totalViews / 1000000).toFixed(1)}M views</div>
-                    <div className="text-muted-foreground">{c.deliverables} deliverables</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </DialogContent>
-        </Dialog>
       </div>
+
+      {/* New Campaign Dialog */}
+      <Dialog open={showNewCampaignDialog} onOpenChange={setShowNewCampaignDialog}>
+        <DialogContent className="bg-card border-border max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-foreground">Create New Campaign</DialogTitle>
+            <DialogDescription className="text-muted-foreground text-xs">
+              Enter campaign details to get started.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-xs font-medium text-muted-foreground block mb-1.5">Campaign Name</label>
+              <Input placeholder="e.g., Q2 Gaming Push" className="h-8 text-xs border-border" />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground block mb-1.5">Client</label>
+              <Input placeholder="e.g., Epic Games" className="h-8 text-xs border-border" />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground block mb-1.5">Total Budget</label>
+              <Input placeholder="e.g., 100000" className="h-8 text-xs border-border" type="number" />
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" size="sm" className="h-7 text-xs border-border">Cancel</Button>
+            <Button size="sm" className="h-7 text-xs bg-primary text-primary-foreground">Create Campaign</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AppShell>
   )
-}
-
-function PlatformBadge({ platform }: { platform: string }) {
-  const styles: Record<string, string> = {
-    YouTube: 'bg-red-500/15 text-red-400 border-red-500/20',
-    TikTok: 'bg-cyan-500/15 text-cyan-400 border-cyan-500/20',
-    Twitch: 'bg-purple-500/15 text-purple-400 border-purple-500/20',
-    Instagram: 'bg-pink-500/15 text-pink-400 border-pink-500/20',
-    X: 'bg-slate-500/15 text-slate-300 border-slate-500/20',
-  }
-  return (
-    <span className={`text-[10px] px-1.5 py-0.5 rounded border font-medium ${styles[platform] ?? 'bg-secondary text-muted-foreground'}`}>
-      {platform}
-    </span>
-  )
-}
-
-function Users({ size, className }: { size: number; className?: string }) {
-  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className={className}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
 }

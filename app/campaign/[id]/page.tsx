@@ -28,6 +28,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import {
   Select,
   SelectContent,
@@ -67,6 +68,7 @@ export default function CampaignDetailPage({ params }: { params: { id: string } 
   const campaign = MOCK_CAMPAIGNS.find(c => c.id === params.id) || MOCK_CAMPAIGNS[0]
   const [activeTab, setActiveTab] = useState('overview')
   const [showNewDeliverableDialog, setShowNewDeliverableDialog] = useState(false)
+  const [showImportUrlsDialog, setShowImportUrlsDialog] = useState(false)
   const [visibleColumns, setVisibleColumns] = useState({
     views: true,
     likes: false,
@@ -120,16 +122,18 @@ export default function CampaignDetailPage({ params }: { params: { id: string } 
             {/* Action Bar */}
             <div className="flex items-center gap-1.5">
               <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs border-border">
-                <X size={13} /> Close
-              </Button>
-              <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs border-border">
                 <RefreshCw size={13} /> Refresh Data
               </Button>
-              <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs border-border">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setShowImportUrlsDialog(true)}
+                className="h-8 gap-1.5 text-xs border-border"
+              >
                 <Upload size={13} /> Import URLs
               </Button>
               <Button size="sm" onClick={() => setShowNewDeliverableDialog(true)} className="h-8 bg-primary text-primary-foreground hover:bg-primary/90 gap-1.5 text-xs font-medium px-3">
-                <Plus size={13} /> Add Deliverable
+                <Plus size={13} /> New Deliverable
               </Button>
             </div>
           </div>
@@ -377,6 +381,24 @@ export default function CampaignDetailPage({ params }: { params: { id: string } 
 
           <div className="space-y-4">
             <div>
+              <label className="text-xs font-medium text-foreground mb-2 block">Deliverable Type</label>
+              <Select>
+                <SelectTrigger className="bg-secondary/60 border-border text-xs">
+                  <SelectValue placeholder="Select type" />
+                </SelectTrigger>
+                <SelectContent className="bg-card border-border">
+                  <SelectItem value="dedicated-video">Dedicated Video</SelectItem>
+                  <SelectItem value="youtube-short">YouTube Short</SelectItem>
+                  <SelectItem value="sponsorship">Sponsorship</SelectItem>
+                  <SelectItem value="stream">Stream/Live Event</SelectItem>
+                  <SelectItem value="collab">Collaboration</SelectItem>
+                  <SelectItem value="review">Product Review</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
               <label className="text-xs font-medium text-foreground mb-2 block">URL</label>
               <Input
                 placeholder="https://youtube.com/watch?v=..."
@@ -433,6 +455,37 @@ export default function CampaignDetailPage({ params }: { params: { id: string } 
             </Button>
             <Button onClick={() => setShowNewDeliverableDialog(false)} className="bg-primary text-primary-foreground text-xs h-8">
               Add Deliverable
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Import URLs Dialog */}
+      <Dialog open={showImportUrlsDialog} onOpenChange={setShowImportUrlsDialog}>
+        <DialogContent className="bg-card border-border max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-foreground">Import URLs</DialogTitle>
+            <DialogDescription className="text-muted-foreground text-xs">
+              Paste multiple URLs (one per line) to bulk import deliverables.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3">
+            <Textarea
+              placeholder="https://youtube.com/watch?v=...&#10;https://tiktok.com/@creator/video/...&#10;https://twitch.tv/..."
+              className="bg-secondary/60 border-border text-xs placeholder:text-muted-foreground/60 min-h-32"
+            />
+            <p className="text-[10px] text-muted-foreground">
+              Supported: YouTube, TikTok, Twitch, Instagram links. Creator names will be extracted automatically when possible.
+            </p>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setShowImportUrlsDialog(false)} className="border-border text-xs h-8">
+              Cancel
+            </Button>
+            <Button onClick={() => setShowImportUrlsDialog(false)} className="bg-primary text-primary-foreground text-xs h-8">
+              Import URLs
             </Button>
           </DialogFooter>
         </DialogContent>
