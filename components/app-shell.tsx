@@ -53,7 +53,6 @@ const navItems = [
   { href: '/campaigns', label: 'Campaigns', icon: Megaphone },
   { href: '/campaign/epic-games-q1', label: 'Campaign Dashboard', icon: Zap },
   { href: '/prospecting', label: 'List Builder', icon: List },
-  { href: '/analytics', label: 'Analytics', icon: BarChart3 },
   { href: '/clients', label: 'Clients', icon: Users },
 ]
 
@@ -260,21 +259,26 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2 text-foreground">
                 <Eye size={18} className="text-primary" />
-                Entering Client-Facing Mode
+                External-Facing Mode
               </DialogTitle>
               <DialogDescription className="text-muted-foreground">
-                You are entering <strong className="text-foreground">Client-Facing mode</strong>. Internal costs, agency margins, and markup percentages are now hidden across the entire platform.
+                You are now in <strong className="text-foreground">External-Facing mode</strong>. Pricing has been masked.
               </DialogDescription>
             </DialogHeader>
-            <div className="bg-primary/10 border border-primary/20 rounded p-3 text-xs text-primary">
-              Make sure all data is accurate before sharing your screen with clients.
+            <div className="space-y-2">
+              <div className="bg-primary/10 border border-primary/20 rounded p-3 text-xs text-primary font-medium">
+                All Internal Price, Profit, and Agency Margin data will be hidden across the entire platform.
+              </div>
+              <div className="text-xs text-muted-foreground">
+                This is safe to share on client calls. Toggle off to return to internal view.
+              </div>
             </div>
             <DialogFooter className="gap-2">
               <Button variant="outline" size="sm" onClick={() => setShowWarning(false)} className="border-border text-muted-foreground">
                 Cancel
               </Button>
               <Button size="sm" onClick={confirmPresentationMode} className="bg-primary text-primary-foreground">
-                <Eye size={13} className="mr-1.5" /> Confirm & Enter
+                <Eye size={13} className="mr-1.5" /> Enter External Mode
               </Button>
             </DialogFooter>
           </DialogContent>

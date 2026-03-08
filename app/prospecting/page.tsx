@@ -12,17 +12,17 @@ import {
   Trash2,
   CheckCircle,
   ExternalLink,
-  Tag,
   Users,
   TrendingUp,
-  ChevronDown,
   MoreHorizontal,
   Copy,
   Check,
+  Info,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
+import { Switch } from '@/components/ui/switch'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -35,13 +35,13 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogFooter,
 } from '@/components/ui/dialog'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 
 type Influencer = typeof MOCK_INFLUENCERS[0] & {
   anticipatedSpend: number
   anticipatedViews: number
+  excludeOutlier: boolean
 }
 
 const PLATFORM_COLORS: Record<string, string> = {
@@ -68,14 +68,19 @@ function MetricCell({ value }: { value: number }) {
 
 export default function ProspectingPage() {
   const [influencers, setInfluencers] = useState<Influencer[]>(
-    MOCK_INFLUENCERS.map(i => ({ ...i, anticipatedSpend: i.anticipatedSpend, anticipatedViews: i.anticipatedViews }))
+    MOCK_INFLUENCERS.map(i => ({ 
+      ...i, 
+      anticipatedSpend: i.anticipatedSpend, 
+      anticipatedViews: i.anticipatedViews,
+      excludeOutlier: false,
+    }))
   )
   const [linkInput, setLinkInput] = useState('')
   const [adding, setAdding] = useState(false)
   const [showShareDialog, setShowShareDialog] = useState(false)
   const [copied, setCopied] = useState(false)
   const [search, setSearch] = useState('')
-  const [listName, setListName] = useState('Epic Games Q2 Prospects')
+  const [listName] = useState('Epic Games Q2 Prospects')
 
   const filtered = influencers.filter(i =>
     i.handle.toLowerCase().includes(search.toLowerCase()) ||
@@ -83,11 +88,13 @@ export default function ProspectingPage() {
     i.tags.some(t => t.toLowerCase().includes(search.toLowerCase()))
   )
 
+  // Filter out outliers when calculating totals
+  const nonOutlierInfluencers = influencers.filter(i => !i.excludeOutlier)
+
   async function handleAddLink() {
     if (!linkInput.trim()) return
     setAdding(true)
     await new Promise(r => setTimeout(r, 900))
-    // Mock extraction
     const newInfluencer: Influencer = {
       id: String(Date.now()),
       handle: '@NewCreator',
@@ -101,13 +108,14 @@ export default function ProspectingPage() {
       anticipatedViews: 0,
       tags: ['Gaming'],
       er: 3.2,
+      excludeOutlier: false,
     }
     setInfluencers(prev => [...prev, newInfluencer])
     setLinkInput('')
     setAdding(false)
   }
 
-  function updateInfluencer(id: string, field: string, value: string | number) {
+  function updateInfluencer(id: string, field: string, value: string | number | boolean) {
     setInfluencers(prev => prev.map(i => i.id === id ? { ...i, [field]: value } : i))
   }
 
@@ -115,9 +123,10 @@ export default function ProspectingPage() {
     setInfluencers(prev => prev.filter(i => i.id !== id))
   }
 
-  const totalSpend = influencers.reduce((a, i) => a + i.anticipatedSpend, 0)
-  const totalViews = influencers.reduce((a, i) => a + i.anticipatedViews, 0)
+  const totalSpend = nonOutlierInfluencers.reduce((a, i) => a + i.anticipatedSpend, 0)
+  const totalViews = nonOutlierInfluencers.reduce((a, i) => a + i.anticipatedViews, 0)
   const estimatedCPM = totalViews > 0 ? ((totalSpend / totalViews) * 1000).toFixed(2) : '—'
+  const outlierCount = influencers.filter(i => i.excludeOutlier).length
 
   function handleCopyLink() {
     navigator.clipboard.writeText('https://app.cherrypicktalent.com/lists/share/abc123xyz')
@@ -140,7 +149,6 @@ export default function ProspectingPage() {
                 variant="outline"
                 size="sm"
                 className="h-7 text-xs border-border gap-1.5"
-                onClick={() => {}}
               >
                 <FileSpreadsheet size={12} /> Export to Sheets
               </Button>
@@ -155,11 +163,12 @@ export default function ProspectingPage() {
           </div>
 
           {/* Summary strip */}
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-4 gap-3">
             {[
-              { label: 'Total Creators', value: influencers.length.toString(), icon: Users },
+              { label: 'Total Creators', value: nonOutlierInfluencers.length.toString(), icon: Users },
               { label: 'Anticipated Spend', value: `$${(totalSpend / 1000).toFixed(0)}K`, icon: TrendingUp },
               { label: 'Est. CPM', value: `$${estimatedCPM}`, icon: TrendingUp },
+              { label: 'Excluded Outliers', value: outlierCount.toString(), icon: Info },
             ].map(({ label, value, icon: Icon }) => (
               <div key={label} className="bg-card border border-border rounded-lg px-4 py-3 flex items-center gap-3">
                 <div className="w-7 h-7 rounded bg-primary/10 flex items-center justify-center shrink-0">
@@ -223,6 +232,17 @@ export default function ProspectingPage() {
                     <th className="text-right text-muted-foreground font-medium px-4 py-2.5">Subscribers</th>
                     <th className="text-right text-muted-foreground font-medium px-4 py-2.5">30D Avg Views</th>
                     <th className="text-right text-muted-foreground font-medium px-4 py-2.5">ER%</th>
+                    <th className="text-center text-muted-foreground font-medium px-4 py-2.5">
+                      <div className="flex items-center justify-center gap-1">
+                        Excl. Outlier
+                        <Tooltip>
+                          <TooltipTrigger><Info size={10} /></TooltipTrigger>
+                          <TooltipContent className="text-xs bg-card border-border max-w-56">
+                            Outliers = creators with views {'>'} 2.5x the median of their last 10 posts. Excluding them gives more conservative projections.
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
+                    </th>
                     <th className="text-right text-muted-foreground font-medium px-4 py-2.5">Ant. Spend</th>
                     <th className="text-right text-muted-foreground font-medium px-4 py-2.5">Ant. Views</th>
                     <th className="text-right text-muted-foreground font-medium px-4 py-2.5">Est. CPM</th>
@@ -236,7 +256,10 @@ export default function ProspectingPage() {
                       : null
 
                     return (
-                      <tr key={inf.id} className="border-b border-border/50 hover:bg-secondary/30 transition-colors group">
+                      <tr 
+                        key={inf.id} 
+                        className={`border-b border-border/50 hover:bg-secondary/30 transition-colors group ${inf.excludeOutlier ? 'opacity-50' : ''}`}
+                      >
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-2">
                             <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
@@ -273,6 +296,24 @@ export default function ProspectingPage() {
                         <td className="px-4 py-3 text-right">
                           <span className={`font-mono tabular-nums ${inf.er > 5 ? 'text-emerald-400' : 'text-foreground'}`}>{inf.er}%</span>
                         </td>
+                        <td className="px-4 py-3 text-center">
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className="inline-flex">
+                                <Switch
+                                  checked={inf.excludeOutlier}
+                                  onCheckedChange={v => updateInfluencer(inf.id, 'excludeOutlier', v)}
+                                  className="scale-75 data-[state=checked]:bg-yellow-500"
+                                />
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent className="text-xs bg-card border-border max-w-48">
+                              {inf.excludeOutlier 
+                                ? 'This creator is excluded from totals' 
+                                : 'Toggle to exclude this creator from calculations'}
+                            </TooltipContent>
+                          </Tooltip>
+                        </td>
                         <td className="px-4 py-3 text-right">
                           <div className="relative inline-block">
                             <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-[11px]">$</span>
@@ -281,6 +322,7 @@ export default function ProspectingPage() {
                               onChange={e => updateInfluencer(inf.id, 'anticipatedSpend', Number(e.target.value.replace(/,/g, '')))}
                               placeholder="0"
                               className="h-6 pl-5 text-[11px] bg-secondary border-border font-mono w-24 text-right"
+                              disabled={inf.excludeOutlier}
                             />
                           </div>
                         </td>
@@ -291,6 +333,7 @@ export default function ProspectingPage() {
                               onChange={e => updateInfluencer(inf.id, 'anticipatedViews', Number(e.target.value.replace(/,/g, '')))}
                               placeholder="0"
                               className="h-6 text-[11px] bg-secondary border-border font-mono w-28 text-right"
+                              disabled={inf.excludeOutlier}
                             />
                           </div>
                         </td>
