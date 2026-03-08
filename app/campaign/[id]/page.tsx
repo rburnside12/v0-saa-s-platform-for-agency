@@ -12,11 +12,16 @@ import {
   Plus,
   ChevronRight,
   ChevronDown,
+  ChevronUp,
   Lock,
   Settings,
   X,
   RefreshCw,
   Upload,
+  FileSpreadsheet,
+  FileText,
+  Calendar,
+  ArrowUpDown,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -45,6 +50,12 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover'
+import { Checkbox } from '@/components/ui/checkbox'
+import {
   BarChart,
   Bar,
   XAxis,
@@ -56,11 +67,42 @@ import {
 } from 'recharts'
 import Link from 'next/link'
 
+// Real social media brand icons
 const PLATFORM_ICONS: Record<string, React.ReactNode> = {
-  YouTube: <svg className="w-4 h-4 fill-red-600" viewBox="0 0 24 24"><path d="M19.615 3.712c-1.899-.596-7.615-.596-9.514-.596s-7.615 0-9.514.596C.051 4.934.051 8.806.051 12s0 7.066.752 8.288c1.899.596 7.615.596 9.514.596s7.615 0 9.514-.596c.701-1.222.752-5.094.752-8.288 0-3.194 0-7.066-.752-8.288zM9.046 15.13V8.87c3.505.987 3.505 3.077 3.505 3.077 0 3.077 0 3.077-3.505 3.183z"/></svg>,
-  Twitch: <svg className="w-4 h-4 fill-purple-600" viewBox="0 0 24 24"><path d="M11 2H2v20h7v-5h4l4-4v-11h-6zm6 10l-3 3h-4v-3h7z"/></svg>,
-  TikTok: <svg className="w-4 h-4 fill-black dark:fill-white" viewBox="0 0 24 24"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 1 1-5.92-2.46v3.6a6.63 6.63 0 1 0 9.69 5.63V9.01a8.35 8.35 0 0 0 4.84-2.65z"/></svg>,
-  Instagram: <svg className="w-4 h-4 fill-pink-600" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5" fill="none" stroke="currentColor" strokeWidth="2"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" strokeWidth="2"/><circle cx="17.5" cy="6.5" r="1.5" fill="currentColor"/></svg>,
+  YouTube: (
+    <svg className="w-5 h-5" viewBox="0 0 24 24">
+      <path fill="#FF0000" d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+    </svg>
+  ),
+  Twitch: (
+    <svg className="w-5 h-5" viewBox="0 0 24 24">
+      <path fill="#9146FF" d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714z"/>
+    </svg>
+  ),
+  TikTok: (
+    <svg className="w-5 h-5" viewBox="0 0 24 24">
+      <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/>
+    </svg>
+  ),
+  Instagram: (
+    <svg className="w-5 h-5" viewBox="0 0 24 24">
+      <defs>
+        <linearGradient id="instagram-gradient" x1="0%" y1="100%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor="#FFDC80"/>
+          <stop offset="25%" stopColor="#FCAF45"/>
+          <stop offset="50%" stopColor="#F77737"/>
+          <stop offset="75%" stopColor="#F56040"/>
+          <stop offset="100%" stopColor="#C13584"/>
+        </linearGradient>
+      </defs>
+      <path fill="url(#instagram-gradient)" d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/>
+    </svg>
+  ),
+  X: (
+    <svg className="w-4 h-4" viewBox="0 0 24 24">
+      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+    </svg>
+  ),
 }
 
 export default function CampaignDetailPage({ params }: { params: { id: string } }) {
@@ -69,6 +111,10 @@ export default function CampaignDetailPage({ params }: { params: { id: string } 
   const [activeTab, setActiveTab] = useState('overview')
   const [showNewDeliverableDialog, setShowNewDeliverableDialog] = useState(false)
   const [showImportUrlsDialog, setShowImportUrlsDialog] = useState(false)
+  const [sortColumn, setSortColumn] = useState<string | null>(null)
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
+  const [dateRange, setDateRange] = useState('all')
+  const [deliverableFilter, setDeliverableFilter] = useState('all')
   const [visibleColumns, setVisibleColumns] = useState({
     views: true,
     likes: false,
@@ -76,6 +122,9 @@ export default function CampaignDetailPage({ params }: { params: { id: string } 
     shares: false,
     engagements: true,
     engagementRate: false,
+    vodViews: false,
+    avgCcv: false,
+    maxCcv: false,
     internalCost: true,
     clientCost: true,
     profitMargin: true,
@@ -89,6 +138,29 @@ export default function CampaignDetailPage({ params }: { params: { id: string } 
       [column]: !prev[column],
     }))
   }
+
+  const handleSort = (column: string) => {
+    if (sortColumn === column) {
+      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortColumn(column)
+      setSortDirection('desc')
+    }
+  }
+
+  const SortableHeader = ({ column, label }: { column: string; label: string }) => (
+    <button 
+      onClick={() => handleSort(column)}
+      className="flex items-center gap-1 hover:text-foreground transition-colors"
+    >
+      {label}
+      {sortColumn === column ? (
+        sortDirection === 'desc' ? <ChevronDown size={10} /> : <ChevronUp size={10} />
+      ) : (
+        <ArrowUpDown size={10} className="opacity-40" />
+      )}
+    </button>
+  )
 
   const chartData = [
     { date: '03.01', YouTube: 1200000, Twitch: 600000, TikTok: 300000, Instagram: 150000 },
@@ -200,31 +272,147 @@ export default function CampaignDetailPage({ params }: { params: { id: string } 
 
               {/* DELIVERABLES TABLE — Full Width */}
               <div className="bg-card border border-border rounded-xl overflow-hidden">
-                <div className="flex items-center justify-between px-6 py-4 border-b border-border/50">
-                  <h3 className="text-sm font-semibold text-foreground">Deliverables</h3>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm" className="h-7 gap-1.5 text-xs px-2">
-                        <Settings size={12} /> Columns
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-52">
-                      <div className="px-2 py-1.5 text-[10px] font-semibold text-muted-foreground uppercase">Performance</div>
-                      <DropdownMenuCheckboxItem checked={visibleColumns.views} onCheckedChange={() => toggleColumnVisibility('views')}>Views</DropdownMenuCheckboxItem>
-                      <DropdownMenuCheckboxItem checked={visibleColumns.likes} onCheckedChange={() => toggleColumnVisibility('likes')}>Likes</DropdownMenuCheckboxItem>
-                      <DropdownMenuCheckboxItem checked={visibleColumns.comments} onCheckedChange={() => toggleColumnVisibility('comments')}>Comments</DropdownMenuCheckboxItem>
-                      <DropdownMenuCheckboxItem checked={visibleColumns.shares} onCheckedChange={() => toggleColumnVisibility('shares')}>Shares</DropdownMenuCheckboxItem>
-                      <DropdownMenuCheckboxItem checked={visibleColumns.engagements} onCheckedChange={() => toggleColumnVisibility('engagements')}>Engagements</DropdownMenuCheckboxItem>
-                      <DropdownMenuCheckboxItem checked={visibleColumns.engagementRate} onCheckedChange={() => toggleColumnVisibility('engagementRate')}>Engagement Rate (ER%)</DropdownMenuCheckboxItem>
-                      <DropdownMenuSeparator />
-                      <div className="px-2 py-1.5 text-[10px] font-semibold text-muted-foreground uppercase">Financials</div>
-                      <DropdownMenuCheckboxItem checked={visibleColumns.internalCost} onCheckedChange={() => toggleColumnVisibility('internalCost')}>Internal Cost</DropdownMenuCheckboxItem>
-                      <DropdownMenuCheckboxItem checked={visibleColumns.clientCost} onCheckedChange={() => toggleColumnVisibility('clientCost')}>Client Cost</DropdownMenuCheckboxItem>
-                      <DropdownMenuCheckboxItem checked={visibleColumns.profitMargin} onCheckedChange={() => toggleColumnVisibility('profitMargin')}>Profit Margin</DropdownMenuCheckboxItem>
-                      <DropdownMenuCheckboxItem checked={visibleColumns.internalCpm} onCheckedChange={() => toggleColumnVisibility('internalCpm')}>Internal CPM</DropdownMenuCheckboxItem>
-                      <DropdownMenuCheckboxItem checked={visibleColumns.externalCpm} onCheckedChange={() => toggleColumnVisibility('externalCpm')}>External CPM</DropdownMenuCheckboxItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                <div className="px-6 py-4 border-b border-border/50 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-semibold text-foreground">Deliverables</h3>
+                    <div className="flex items-center gap-2">
+                      {/* Columns Popover - stays open for multiple selections */}
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button variant="outline" size="sm" className="h-7 gap-1.5 text-xs px-2.5 border-border">
+                            <Settings size={12} /> Columns
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent align="end" className="w-56 p-3">
+                          <div className="space-y-3">
+                            <p className="text-[10px] font-semibold text-muted-foreground uppercase">Performance</p>
+                            <div className="space-y-2">
+                              <label className="flex items-center gap-2 text-xs cursor-pointer">
+                                <Checkbox checked={visibleColumns.views} onCheckedChange={() => toggleColumnVisibility('views')} />
+                                Views
+                              </label>
+                              <label className="flex items-center gap-2 text-xs cursor-pointer">
+                                <Checkbox checked={visibleColumns.likes} onCheckedChange={() => toggleColumnVisibility('likes')} />
+                                Likes
+                              </label>
+                              <label className="flex items-center gap-2 text-xs cursor-pointer">
+                                <Checkbox checked={visibleColumns.comments} onCheckedChange={() => toggleColumnVisibility('comments')} />
+                                Comments
+                              </label>
+                              <label className="flex items-center gap-2 text-xs cursor-pointer">
+                                <Checkbox checked={visibleColumns.shares} onCheckedChange={() => toggleColumnVisibility('shares')} />
+                                Shares
+                              </label>
+                              <label className="flex items-center gap-2 text-xs cursor-pointer">
+                                <Checkbox checked={visibleColumns.engagements} onCheckedChange={() => toggleColumnVisibility('engagements')} />
+                                Engagements
+                              </label>
+                              <label className="flex items-center gap-2 text-xs cursor-pointer">
+                                <Checkbox checked={visibleColumns.engagementRate} onCheckedChange={() => toggleColumnVisibility('engagementRate')} />
+                                Engagement Rate (ER%)
+                              </label>
+                            </div>
+                            <div className="border-t border-border pt-3">
+                              <p className="text-[10px] font-semibold text-muted-foreground uppercase mb-2">Livestream</p>
+                              <div className="space-y-2">
+                                <label className="flex items-center gap-2 text-xs cursor-pointer">
+                                  <Checkbox checked={visibleColumns.vodViews} onCheckedChange={() => toggleColumnVisibility('vodViews')} />
+                                  VOD Views
+                                </label>
+                                <label className="flex items-center gap-2 text-xs cursor-pointer">
+                                  <Checkbox checked={visibleColumns.avgCcv} onCheckedChange={() => toggleColumnVisibility('avgCcv')} />
+                                  Average CCV
+                                </label>
+                                <label className="flex items-center gap-2 text-xs cursor-pointer">
+                                  <Checkbox checked={visibleColumns.maxCcv} onCheckedChange={() => toggleColumnVisibility('maxCcv')} />
+                                  Max CCV
+                                </label>
+                              </div>
+                            </div>
+                            <div className="border-t border-border pt-3">
+                              <p className="text-[10px] font-semibold text-muted-foreground uppercase mb-2">Financials</p>
+                              <div className="space-y-2">
+                                <label className="flex items-center gap-2 text-xs cursor-pointer">
+                                  <Checkbox checked={visibleColumns.internalCost} onCheckedChange={() => toggleColumnVisibility('internalCost')} />
+                                  Internal Cost
+                                </label>
+                                <label className="flex items-center gap-2 text-xs cursor-pointer">
+                                  <Checkbox checked={visibleColumns.clientCost} onCheckedChange={() => toggleColumnVisibility('clientCost')} />
+                                  Client Cost
+                                </label>
+                                <label className="flex items-center gap-2 text-xs cursor-pointer">
+                                  <Checkbox checked={visibleColumns.profitMargin} onCheckedChange={() => toggleColumnVisibility('profitMargin')} />
+                                  Profit Margin
+                                </label>
+                                <label className="flex items-center gap-2 text-xs cursor-pointer">
+                                  <Checkbox checked={visibleColumns.internalCpm} onCheckedChange={() => toggleColumnVisibility('internalCpm')} />
+                                  Internal CPM
+                                </label>
+                                <label className="flex items-center gap-2 text-xs cursor-pointer">
+                                  <Checkbox checked={visibleColumns.externalCpm} onCheckedChange={() => toggleColumnVisibility('externalCpm')} />
+                                  External CPM
+                                </label>
+                              </div>
+                            </div>
+                          </div>
+                        </PopoverContent>
+                      </Popover>
+
+                      {/* Export Button with Dropdown */}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="outline" size="sm" className="h-7 gap-1.5 text-xs px-2.5 border-border">
+                            <Download size={12} /> Export <ChevronDown size={10} />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-44">
+                          <DropdownMenuItem className="text-xs gap-2 cursor-pointer">
+                            <FileSpreadsheet size={12} /> Google Sheets
+                          </DropdownMenuItem>
+                          <DropdownMenuItem className="text-xs gap-2 cursor-pointer">
+                            <FileText size={12} /> CSV
+                          </DropdownMenuItem>
+                          <DropdownMenuItem className="text-xs gap-2 cursor-pointer">
+                            <FileText size={12} /> PDF
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </div>
+
+                  {/* Second Row: Date Range & Deliverable Filter */}
+                  <div className="flex items-center gap-2">
+                    {/* Date Range Selector */}
+                    <Select value={dateRange} onValueChange={setDateRange}>
+                      <SelectTrigger className="h-7 w-36 text-xs border-border">
+                        <Calendar size={12} className="mr-1.5" />
+                        <SelectValue placeholder="Date Range" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Time</SelectItem>
+                        <SelectItem value="7d">Last 7 Days</SelectItem>
+                        <SelectItem value="30d">Last 30 Days</SelectItem>
+                        <SelectItem value="90d">Last 90 Days</SelectItem>
+                        <SelectItem value="custom">Custom Range</SelectItem>
+                      </SelectContent>
+                    </Select>
+
+                    {/* Deliverable Type Filter */}
+                    <Select value={deliverableFilter} onValueChange={setDeliverableFilter}>
+                      <SelectTrigger className="h-7 w-44 text-xs border-border">
+                        <SelectValue placeholder="All Deliverables" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Deliverables</SelectItem>
+                        <SelectItem value="dedicated">Dedicated Videos</SelectItem>
+                        <SelectItem value="short">YouTube Shorts</SelectItem>
+                        <SelectItem value="sponsorship">Sponsorships</SelectItem>
+                        <SelectItem value="stream">Livestreams</SelectItem>
+                        <SelectItem value="collab">Collaborations</SelectItem>
+                        <SelectItem value="review">Product Reviews</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
 
                 <div className="overflow-x-auto">
@@ -232,19 +420,26 @@ export default function CampaignDetailPage({ params }: { params: { id: string } 
                     <thead>
                       <tr className="border-b border-border/50 bg-secondary/30">
                         <th className="text-center px-4 py-3 text-muted-foreground font-medium text-xs">Platform</th>
-                        <th className="text-left px-5 py-3 text-muted-foreground font-medium text-xs">Creator</th>
-                        <th className="text-left px-5 py-3 text-muted-foreground font-medium text-xs">Type</th>
-                        {visibleColumns.views && <th className="text-right px-4 py-3 text-muted-foreground font-medium text-xs">Views</th>}
-                        {visibleColumns.likes && <th className="text-right px-4 py-3 text-muted-foreground font-medium text-xs">Likes</th>}
-                        {visibleColumns.comments && <th className="text-right px-4 py-3 text-muted-foreground font-medium text-xs">Comments</th>}
-                        {visibleColumns.shares && <th className="text-right px-4 py-3 text-muted-foreground font-medium text-xs">Shares</th>}
-                        {visibleColumns.engagements && <th className="text-right px-4 py-3 text-muted-foreground font-medium text-xs">Engagements</th>}
-                        {visibleColumns.engagementRate && <th className="text-right px-4 py-3 text-muted-foreground font-medium text-xs">ER%</th>}
-                        {visibleColumns.internalCost && <th className="text-right px-4 py-3 text-muted-foreground font-medium text-xs">{presentationMode ? <Lock size={10} /> : 'Int. Cost'}</th>}
-                        {visibleColumns.clientCost && <th className="text-right px-4 py-3 text-muted-foreground font-medium text-xs">{presentationMode ? <Lock size={10} /> : 'Client Cost'}</th>}
-                        {visibleColumns.profitMargin && <th className="text-right px-4 py-3 text-muted-foreground font-medium text-xs">{presentationMode ? <Lock size={10} /> : 'Profit'}</th>}
-                        {visibleColumns.internalCpm && <th className="text-right px-4 py-3 text-muted-foreground font-medium text-xs">{presentationMode ? <Lock size={10} /> : 'Int. CPM'}</th>}
-                        {visibleColumns.externalCpm && <th className="text-right px-4 py-3 text-muted-foreground font-medium text-xs">Ext. CPM</th>}
+                        <th className="text-left px-5 py-3 text-muted-foreground font-medium text-xs">
+                          <SortableHeader column="creator" label="Creator" />
+                        </th>
+                        <th className="text-left px-5 py-3 text-muted-foreground font-medium text-xs">
+                          <SortableHeader column="type" label="Type" />
+                        </th>
+                        {visibleColumns.views && <th className="text-right px-4 py-3 text-muted-foreground font-medium text-xs"><SortableHeader column="views" label="Views" /></th>}
+                        {visibleColumns.likes && <th className="text-right px-4 py-3 text-muted-foreground font-medium text-xs"><SortableHeader column="likes" label="Likes" /></th>}
+                        {visibleColumns.comments && <th className="text-right px-4 py-3 text-muted-foreground font-medium text-xs"><SortableHeader column="comments" label="Comments" /></th>}
+                        {visibleColumns.shares && <th className="text-right px-4 py-3 text-muted-foreground font-medium text-xs"><SortableHeader column="shares" label="Shares" /></th>}
+                        {visibleColumns.engagements && <th className="text-right px-4 py-3 text-muted-foreground font-medium text-xs"><SortableHeader column="engagements" label="Engagements" /></th>}
+                        {visibleColumns.engagementRate && <th className="text-right px-4 py-3 text-muted-foreground font-medium text-xs"><SortableHeader column="engagementRate" label="ER%" /></th>}
+                        {visibleColumns.vodViews && <th className="text-right px-4 py-3 text-muted-foreground font-medium text-xs"><SortableHeader column="vodViews" label="VOD Views" /></th>}
+                        {visibleColumns.avgCcv && <th className="text-right px-4 py-3 text-muted-foreground font-medium text-xs"><SortableHeader column="avgCcv" label="Avg CCV" /></th>}
+                        {visibleColumns.maxCcv && <th className="text-right px-4 py-3 text-muted-foreground font-medium text-xs"><SortableHeader column="maxCcv" label="Max CCV" /></th>}
+                        {visibleColumns.internalCost && <th className="text-right px-4 py-3 text-muted-foreground font-medium text-xs">{presentationMode ? <Lock size={10} /> : <SortableHeader column="internalCost" label="Int. Cost" />}</th>}
+                        {visibleColumns.clientCost && <th className="text-right px-4 py-3 text-muted-foreground font-medium text-xs">{presentationMode ? <Lock size={10} /> : <SortableHeader column="clientCost" label="Client Cost" />}</th>}
+                        {visibleColumns.profitMargin && <th className="text-right px-4 py-3 text-muted-foreground font-medium text-xs">{presentationMode ? <Lock size={10} /> : <SortableHeader column="profitMargin" label="Profit" />}</th>}
+                        {visibleColumns.internalCpm && <th className="text-right px-4 py-3 text-muted-foreground font-medium text-xs">{presentationMode ? <Lock size={10} /> : <SortableHeader column="internalCpm" label="Int. CPM" />}</th>}
+                        {visibleColumns.externalCpm && <th className="text-right px-4 py-3 text-muted-foreground font-medium text-xs"><SortableHeader column="externalCpm" label="Ext. CPM" /></th>}
                       </tr>
                     </thead>
                     <tbody>
@@ -260,6 +455,11 @@ export default function CampaignDetailPage({ params }: { params: { id: string } 
                         const profit = clientCost - internalCost
                         const internalCpm = ((internalCost / views) * 1000).toFixed(2)
                         const externalCpm = ((clientCost / views) * 1000).toFixed(2)
+                        // Livestream metrics (simulated for streams)
+                        const isLivestream = d.contentType === 'Stream' || d.creator.platform === 'Twitch'
+                        const vodViews = isLivestream ? Math.floor(views * 0.35) : null
+                        const avgCcv = isLivestream ? Math.floor(12000 + idx * 3500) : null
+                        const maxCcv = isLivestream ? Math.floor((avgCcv || 0) * 1.8) : null
 
                         return (
                           <tr key={idx} className="border-b border-border/50 hover:bg-secondary/40 transition-colors text-xs">
@@ -281,6 +481,9 @@ export default function CampaignDetailPage({ params }: { params: { id: string } 
                             {visibleColumns.shares && <td className="text-right px-4 py-3 font-mono text-foreground">{shares.toLocaleString()}</td>}
                             {visibleColumns.engagements && <td className="text-right px-4 py-3 font-mono font-bold text-foreground">{engagements.toLocaleString()}</td>}
                             {visibleColumns.engagementRate && <td className="text-right px-4 py-3 font-mono text-foreground">{engagementRate}%</td>}
+                            {visibleColumns.vodViews && <td className="text-right px-4 py-3 font-mono text-foreground">{vodViews ? vodViews.toLocaleString() : '—'}</td>}
+                            {visibleColumns.avgCcv && <td className="text-right px-4 py-3 font-mono text-foreground">{avgCcv ? avgCcv.toLocaleString() : '—'}</td>}
+                            {visibleColumns.maxCcv && <td className="text-right px-4 py-3 font-mono text-foreground">{maxCcv ? maxCcv.toLocaleString() : '—'}</td>}
                             {visibleColumns.internalCost && (
                               <td className="text-right px-4 py-3 font-mono text-foreground">
                                 {presentationMode ? <span className="text-muted-foreground blur-sm select-none">$••••</span> : `$${internalCost.toLocaleString()}`}
