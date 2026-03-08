@@ -21,9 +21,12 @@ import {
   LogOut,
   User,
   Zap,
+  Sun,
+  Moon,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { usePresentationMode } from '@/contexts/presentation-mode'
+import { useTheme } from '@/contexts/theme'
 import {
   Dialog,
   DialogContent,
@@ -57,6 +60,7 @@ const navItems = [
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const { presentationMode, setPresentationMode } = usePresentationMode()
+  const { theme, toggleTheme } = useTheme()
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [showWarning, setShowWarning] = useState(false)
   const [pendingMode, setPendingMode] = useState(false)
@@ -178,6 +182,24 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 className="data-[state=checked]:bg-primary scale-75"
               />
             </div>
+
+            {/* Theme Toggle */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
+                  onClick={toggleTheme}
+                  aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+                >
+                  {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                {theme === 'dark' ? 'Light mode' : 'Dark mode'}
+              </TooltipContent>
+            </Tooltip>
 
             <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground">
               <Bell size={15} />
