@@ -74,6 +74,7 @@ import {
   Cell,
 } from 'recharts'
 import Link from 'next/link'
+import { CampaignReportTab } from '@/components/campaign-report-tab'
 
 // Real social media brand icons
 const PLATFORM_ICONS: Record<string, React.ReactNode> = {
@@ -480,6 +481,17 @@ export default function CampaignDetailPage({ params }: { params: { id: string } 
               )}
             >
               Analytics
+            </button>
+            <button
+              onClick={() => setActiveTab('report')}
+              className={cn(
+                'pb-3 text-xs font-semibold border-b-2 transition-colors',
+                activeTab === 'report'
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-muted-foreground hover:text-foreground'
+              )}
+            >
+              Report
             </button>
           </div>
 
@@ -977,6 +989,11 @@ export default function CampaignDetailPage({ params }: { params: { id: string } 
                 </ResponsiveContainer>
               </div>
             </div>
+          )}
+
+          {/* REPORT TAB */}
+          {activeTab === 'report' && (
+            <CampaignReportTab presentationMode={presentationMode} />
           )}
         </div>
       </div>
