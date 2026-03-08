@@ -13,10 +13,13 @@ import {
   Sun,
   Moon,
   Eye,
-  EyeOff,
   LogOut,
   User,
   ChevronDown,
+  Search,
+  AlertCircle,
+  BookOpen,
+  Bell,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { usePresentationMode } from '@/contexts/presentation-mode'
@@ -29,12 +32,19 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { Input } from '@/components/ui/input'
 
 const navItems = [
-  { href: '/', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/', label: 'Overview', icon: LayoutDashboard },
   { href: '/campaigns', label: 'Campaigns', icon: Megaphone },
   { href: '/prospecting', label: 'List Builder', icon: List },
+  { href: '/anomalies', label: 'Anomalies', icon: AlertCircle },
   { href: '/settings', label: 'Settings', icon: Settings },
+]
+
+const pinnedItems = [
+  { label: 'Notifications', icon: Bell, badge: 3 },
+  { label: 'Documentation', icon: BookOpen, badge: 0 },
 ]
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -83,6 +93,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           )}
         </div>
 
+        {/* Search */}
+        {sidebarOpen && (
+          <div className="px-2 py-2 border-b border-border">
+            <div className="relative">
+              <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+              <input
+                type="text"
+                placeholder="Search campaigns..."
+                className="w-full h-8 pl-7 pr-2.5 rounded-md bg-secondary/60 border border-border/50 text-xs placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-primary"
+              />
+            </div>
+          </div>
+        )}
+
         {/* Navigation — High Density */}
         <nav className="flex-1 overflow-y-auto py-2 px-2">
           {navItems.map(({ href, label, icon: Icon }) => {
@@ -103,6 +127,27 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </Link>
             )
           })}
+
+          {/* Pinned Section */}
+          {sidebarOpen && (
+            <div className="mt-4 pt-3 border-t border-border space-y-1">
+              <p className="text-[10px] font-semibold uppercase text-muted-foreground/60 px-2.5 mb-2">Pinned</p>
+              {pinnedItems.map(({ label, icon: Icon, badge }) => (
+                <div
+                  key={label}
+                  className="flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-xs text-muted-foreground hover:bg-secondary transition-colors cursor-pointer"
+                >
+                  <Icon size={13} className="shrink-0" />
+                  <span className="truncate flex-1">{label}</span>
+                  {badge > 0 && (
+                    <span className="bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-[9px] font-bold shrink-0">
+                      {badge}
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </nav>
 
         {/* Bottom User */}
