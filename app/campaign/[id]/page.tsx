@@ -127,170 +127,229 @@ export default function CampaignDetailPage({ params }: { params: { id: string } 
 
             {activeTab === 'overview' && (
               <>
-                {/* KPI Cards with Sparklines */}
-                <div className="grid grid-cols-3 gap-4">
-                  {/* Card 1: Total Client Spend */}
-                  <div className="bg-card border border-border rounded-lg p-4">
-                    <div className="flex items-start justify-between mb-3">
-                      <div>
-                        <p className="text-xs text-muted-foreground font-medium">Total Client Spend</p>
-                        <p className="text-2xl font-bold text-foreground font-mono mt-1">
-                          {presentationMode ? '••••' : `$${(campaign.spent / 1000).toFixed(0)}K`}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-1 bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-medium">
-                        <ArrowUpRight size={11} />
-                        +{spendChange}%
+                {/* BENTO GRID LAYOUT */}
+                <div className="space-y-4">
+                  <div className="grid grid-cols-12 gap-4">
+                  
+                  {/* Top Row: 4 KPI Cards */}
+                  <div className="col-span-3 bg-card border border-border rounded-xl p-4">
+                    <p className="text-xs text-muted-foreground font-medium mb-2">Total Client Spend</p>
+                    <p className="text-2xl font-bold text-foreground font-mono mb-3">
+                      {presentationMode ? '•••••' : `$${(campaign.spent / 1000).toFixed(0)}K`}
+                    </p>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1 bg-green-50 text-green-700 px-2 py-0.5 rounded-full text-xs font-semibold">
+                        <ArrowUpRight size={10} /> +{spendChange}%
                       </div>
                     </div>
-                    {/* Sparkline */}
-                    <ResponsiveContainer width="100%" height={40}>
+                    <ResponsiveContainer width="100%" height={30} className="mt-3">
                       <LineChart data={sparkline} margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
-                        <Line type="monotone" dataKey="v" stroke="#10B981" strokeWidth={2} dot={false} />
+                        <Line type="monotone" dataKey="v" stroke="#10B981" strokeWidth={1.5} dot={false} />
                       </LineChart>
                     </ResponsiveContainer>
                   </div>
 
-                  {/* Card 2: Forecasted Views */}
-                  <div className="bg-card border border-border rounded-lg p-4">
-                    <div className="flex items-start justify-between mb-3">
-                      <div>
-                        <p className="text-xs text-muted-foreground font-medium">Forecasted Views</p>
-                        <p className="text-2xl font-bold text-foreground font-mono mt-1">
-                          {(campaign.totalViews / 1000000).toFixed(1)}M
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-1 bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-medium">
-                        <ArrowUpRight size={11} />
-                        +{viewsChange}%
-                      </div>
+                  <div className="col-span-3 bg-card border border-border rounded-xl p-4">
+                    <p className="text-xs text-muted-foreground font-medium mb-2">Forecasted Views</p>
+                    <p className="text-2xl font-bold text-foreground font-mono mb-3">
+                      {(campaign.totalViews / 1000000).toFixed(1)}M
+                    </p>
+                    <div className="flex items-center gap-1 bg-green-50 text-green-700 px-2 py-0.5 rounded-full text-xs font-semibold">
+                      <ArrowUpRight size={10} /> +{viewsChange}%
                     </div>
-                    <ResponsiveContainer width="100%" height={40}>
+                    <ResponsiveContainer width="100%" height={30} className="mt-3">
                       <LineChart data={sparkline} margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
-                        <Line type="monotone" dataKey="v" stroke="#10B981" strokeWidth={2} dot={false} />
+                        <Line type="monotone" dataKey="v" stroke="#10B981" strokeWidth={1.5} dot={false} />
                       </LineChart>
                     </ResponsiveContainer>
                   </div>
 
-                  {/* Card 3: Agency Profit */}
                   <div className={cn(
-                    'bg-card border border-border rounded-lg p-4',
-                    presentationMode && 'opacity-30'
+                    'col-span-3 bg-card border border-border rounded-xl p-4',
+                    presentationMode && 'opacity-40 pointer-events-none'
                   )}>
-                    <div className="flex items-start justify-between mb-3">
-                      <div>
-                        <p className="text-xs text-muted-foreground font-medium">Agency Profit</p>
-                        <p className="text-2xl font-bold text-emerald-600 font-mono mt-1">
-                          ${(profit / 1000).toFixed(0)}K
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-1 bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-medium">
-                        <ArrowUpRight size={11} />
-                        +8.5%
-                      </div>
+                    <p className="text-xs text-muted-foreground font-medium mb-2">Agency Profit</p>
+                    <p className="text-2xl font-bold text-emerald-600 font-mono mb-3">
+                      ${(profit / 1000).toFixed(0)}K
+                    </p>
+                    <div className="flex items-center gap-1 bg-green-50 text-green-700 px-2 py-0.5 rounded-full text-xs font-semibold">
+                      <ArrowUpRight size={10} /> +{profitChange}%
                     </div>
-                    <ResponsiveContainer width="100%" height={40}>
+                    <ResponsiveContainer width="100%" height={30} className="mt-3">
                       <LineChart data={sparkline} margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
-                        <Line type="monotone" dataKey="v" stroke="#10B981" strokeWidth={2} dot={false} />
+                        <Line type="monotone" dataKey="v" stroke="#10B981" strokeWidth={1.5} dot={false} />
                       </LineChart>
                     </ResponsiveContainer>
                   </div>
-                </div>
 
-                {/* Analytics Hub — Stacked Bar Chart */}
-                <div className="bg-card border border-border rounded-lg p-4 shadow-sm">
-                  <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-sm font-semibold text-foreground">Views by Platform</h2>
-                    <Badge variant="outline" className="text-xs">Weekly</Badge>
+                  <div className="col-span-3 bg-card border border-border rounded-xl p-4">
+                    <p className="text-xs text-muted-foreground font-medium mb-2">Avg. Platform CPM</p>
+                    <p className="text-2xl font-bold text-foreground font-mono mb-3">
+                      $12.80
+                    </p>
+                    <div className="flex items-center gap-1 bg-red-50 text-red-700 px-2 py-0.5 rounded-full text-xs font-semibold">
+                      <ArrowDownRight size={10} /> -2.1%
+                    </div>
+                    <ResponsiveContainer width="100%" height={30} className="mt-3">
+                      <LineChart data={sparkline} margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
+                        <Line type="monotone" dataKey="v" stroke="#EF4444" strokeWidth={1.5} dot={false} />
+                      </LineChart>
+                    </ResponsiveContainer>
                   </div>
 
-                  {analytics?.stackedByPlatform ? (
-                    <ResponsiveContainer width="100%" height={300}>
-                      <BarChart data={analytics.stackedByPlatform} margin={{ top: 20, right: 30, left: 0, bottom: 30 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false} />
-                        <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#6B7280' }} />
-                        <YAxis tick={{ fontSize: 11, fill: '#6B7280' }} />
-                        <Tooltip
-                          contentStyle={{
-                            backgroundColor: '#FFFFFF',
-                            border: '1px solid #E5E7EB',
-                            borderRadius: '4px',
-                          }}
-                          labelStyle={{ color: '#1F2937' }}
-                        />
-                        <Legend wrapperStyle={{ fontSize: '11px' }} />
-                        <Bar dataKey="YouTube" fill={platformColors.YouTube} stackId="platform" />
-                        <Bar dataKey="Twitch" fill={platformColors.Twitch} stackId="platform" />
-                        <Bar dataKey="TikTok" fill={platformColors.TikTok} stackId="platform" />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  ) : (
-                    <div className="h-80 bg-secondary/20 rounded flex items-center justify-center">
-                      <span className="text-xs text-muted-foreground">No chart data available</span>
+                  {/* Analytics Hub: 3-column Chart + Right Sidebar */}
+                  <div className="col-span-8 bg-card border border-border rounded-xl p-5">
+                    <div className="flex items-center justify-between mb-4">
+                      <h2 className="text-sm font-semibold text-foreground">Views by Platform</h2>
+                      <div className="flex items-center gap-2">
+                        <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
+                          <Filter size={12} className="text-muted-foreground" />
+                        </Button>
+                        <Badge variant="outline" className="text-[10px]">Weekly</Badge>
+                      </div>
                     </div>
-                  )}
+
+                    {analytics?.stackedByPlatform ? (
+                      <ResponsiveContainer width="100%" height={280}>
+                        <BarChart data={analytics.stackedByPlatform} margin={{ top: 10, right: 20, left: 0, bottom: 20 }}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false} />
+                          <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#6B7280' }} />
+                          <YAxis tick={{ fontSize: 10, fill: '#6B7280' }} />
+                          <Tooltip
+                            contentStyle={{ backgroundColor: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: '6px' }}
+                            labelStyle={{ color: '#1F2937', fontSize: '11px' }}
+                          />
+                          <Bar dataKey="YouTube" fill="#7C3AED" stackId="platform" radius={[4, 4, 0, 0]} />
+                          <Bar dataKey="Twitch" fill="#A78BFA" stackId="platform" radius={[4, 4, 0, 0]} />
+                          <Bar dataKey="TikTok" fill="#C4B5FD" stackId="platform" radius={[4, 4, 0, 0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <div className="h-72 bg-secondary/20 rounded flex items-center justify-center">
+                        <span className="text-xs text-muted-foreground">No chart data</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Right Sidebar: Efficiency Cards */}
+                  <div className="col-span-4 space-y-4">
+                    {/* Goal Progress */}
+                    <div className="bg-card border border-border rounded-xl p-5">
+                      <p className="text-xs text-muted-foreground font-medium mb-4">Campaign Goal Progress</p>
+                      <div className="flex items-center gap-6">
+                        <svg width="80" height="80" viewBox="0 0 80 80" className="shrink-0">
+                          <circle cx="40" cy="40" r="35" fill="none" stroke="#E5E7EB" strokeWidth="4" />
+                          <circle
+                            cx="40"
+                            cy="40"
+                            r="35"
+                            fill="none"
+                            stroke="#7C3AED"
+                            strokeWidth="4"
+                            strokeDasharray={`${35 * 2 * Math.PI * 0.78} ${35 * 2 * Math.PI}`}
+                            strokeLinecap="round"
+                            transform="rotate(-90 40 40)"
+                          />
+                          <text x="40" y="48" textAnchor="middle" fontSize="20" fontWeight="bold" fill="#1F2937">
+                            78%
+                          </text>
+                        </svg>
+                        <div>
+                          <p className="text-2xl font-bold text-foreground">78%</p>
+                          <p className="text-xs text-muted-foreground mt-1">to target</p>
+                          <div className="flex items-center gap-1 bg-green-50 text-green-700 px-2 py-1 rounded-full text-[10px] font-semibold mt-2">
+                            <TrendingUp size={10} /> +Gain potential
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* AI Data Verification */}
+                    <div className="bg-card border border-border rounded-xl p-5">
+                      <p className="text-xs text-muted-foreground font-medium mb-3">AI Data Verification</p>
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="font-medium text-foreground">Health: <span className="text-green-700 font-bold">98%</span></span>
+                        </div>
+                        <div className="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                          <div className="h-full w-98/100 bg-green-500 rounded-full" style={{ width: '98%' }} />
+                        </div>
+                        <p className="text-[10px] text-muted-foreground mt-1">Data sources verified</p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
-                {/* High-Density Deliverables Table */}
-                <div className="bg-card border border-border rounded-lg overflow-hidden">
-                  <div className="px-6 py-3 border-b border-border bg-secondary/30">
+                  {/* Full-Width Deliverables Table: High-Density Bento */}
+                  <div className="col-span-12 bg-card border border-border rounded-xl overflow-hidden">
+                  <div className="px-6 py-4 border-b border-border/50">
                     <h3 className="text-sm font-semibold text-foreground">Deliverables</h3>
                   </div>
 
                   <div className="overflow-x-auto">
                     <table className="w-full text-xs">
                       <thead>
-                        <tr className="border-b border-border">
-                          <th className="text-left px-6 py-3 text-muted-foreground font-medium">Platform</th>
-                          <th className="text-left px-6 py-3 text-muted-foreground font-medium">Creator</th>
-                          <th className="text-left px-6 py-3 text-muted-foreground font-medium">Type</th>
-                          <th className="text-right px-6 py-3 text-muted-foreground font-medium">Views</th>
-                          <th className="text-right px-6 py-3 text-muted-foreground font-medium">Target</th>
-                          <th className="text-right px-6 py-3 text-muted-foreground font-medium">% to Goal</th>
-                          {!presentationMode && <th className="text-right px-6 py-3 text-muted-foreground font-medium">Int. Cost</th>}
-                          {!presentationMode && <th className="text-right px-6 py-3 text-muted-foreground font-medium">Margin %</th>}
+                        <tr className="border-b border-border/50 bg-secondary/30">
+                          <th className="text-left px-5 py-3 text-muted-foreground font-medium">Platform</th>
+                          <th className="text-left px-5 py-3 text-muted-foreground font-medium">Creator</th>
+                          <th className="text-left px-5 py-3 text-muted-foreground font-medium">Content Type</th>
+                          <th className="text-right px-5 py-3 text-muted-foreground font-medium">Views</th>
+                          <th className="text-right px-5 py-3 text-muted-foreground font-medium">Change</th>
+                          <th className="text-right px-5 py-3 text-muted-foreground font-medium">Trend</th>
+                          {!presentationMode && <th className="text-right px-5 py-3 text-muted-foreground font-medium">Int. Cost</th>}
+                          {!presentationMode && <th className="text-right px-5 py-3 text-muted-foreground font-medium">Margin</th>}
                         </tr>
                       </thead>
                       <tbody>
-                        {MOCK_DELIVERABLES.slice(0, 5).map((d, idx) => (
-                          <tr key={idx} className="border-b border-border/50 hover:bg-secondary/20 transition-colors">
-                            <td className="px-6 py-4 font-medium">{d.creator.platform}</td>
-                            <td className="px-6 py-4">
-                              <div className="flex items-center gap-2">
-                                <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                                  <span className="text-primary text-[9px] font-bold">{d.creator.avatar}</span>
+                        {MOCK_DELIVERABLES.slice(0, 6).map((d, idx) => (
+                          <tr key={idx} className="border-b border-border/50 hover:bg-secondary/40 transition-colors">
+                            <td className="px-5 py-3 font-semibold text-foreground">{d.creator.platform}</td>
+                            <td className="px-5 py-3">
+                              <div className="flex items-center gap-2.5">
+                                <div className="w-5 h-5 rounded-full bg-primary/15 flex items-center justify-center shrink-0">
+                                  <span className="text-primary text-[8px] font-bold">{d.creator.avatar}</span>
                                 </div>
                                 <div className="min-w-0">
-                                  <p className="font-medium text-foreground truncate">{d.creator.handle}</p>
-                                  <p className="text-[10px] text-muted-foreground truncate">{d.creator.name}</p>
+                                  <p className="font-medium text-foreground text-xs truncate">{d.creator.handle}</p>
                                 </div>
                               </div>
                             </td>
-                            <td className="px-6 py-4 text-muted-foreground">{d.contentType}</td>
-                            <td className="text-right px-6 py-4 font-mono text-foreground font-semibold">
-                              {d.youtube?.avg30dLong ? `${(d.youtube.avg30dLong / 1000000).toFixed(1)}M` : '—'}
+                            <td className="px-5 py-3 text-muted-foreground">{d.contentType}</td>
+                            <td className="text-right px-5 py-3 font-mono font-bold text-foreground">
+                              {d.youtube?.avg30dLong ? `${(d.youtube.avg30dLong / 1000000).toFixed(1)}M` : d.tiktok?.views ? `${(d.tiktok.views / 1000000).toFixed(1)}M` : '—'}
                             </td>
-                            <td className="text-right px-6 py-4 font-mono text-muted-foreground">
-                              2.5M
+                            <td className="text-right px-5 py-3">
+                              <span className="font-mono font-semibold text-green-600">+12.4%</span>
                             </td>
-                            <td className="text-right px-6 py-4">
-                              <div className="flex items-center justify-end gap-2">
-                                <div className="w-12 h-1 bg-secondary rounded-full overflow-hidden">
-                                  <div className="h-full w-3/4 bg-primary rounded-full" />
-                                </div>
-                                <span className="font-mono text-foreground font-semibold">75%</span>
-                              </div>
+                            <td className="text-right px-5 py-3">
+                              <ResponsiveContainer width={50} height={20} className="inline-block">
+                                <LineChart data={sparkline} margin={{ top: 2, right: 2, bottom: 2, left: 2 }}>
+                                  <Line type="monotone" dataKey="v" stroke="#7C3AED" strokeWidth={1} dot={false} />
+                                </LineChart>
+                              </ResponsiveContainer>
                             </td>
                             {!presentationMode && (
                               <>
-                                <td className="text-right px-6 py-4 font-mono text-foreground">${d.internalPrice.toLocaleString()}</td>
-                                <td className="text-right px-6 py-4 font-mono text-emerald-600 font-semibold">{d.margin}%</td>
+                                <td className={cn(
+                                  'text-right px-5 py-3 font-mono text-foreground',
+                                  presentationMode && 'opacity-30'
+                                )}>
+                                  ${d.internalPrice.toLocaleString()}
+                                </td>
+                                <td className={cn(
+                                  'text-right px-5 py-3 font-mono font-semibold text-emerald-600',
+                                  presentationMode && 'opacity-30'
+                                )}>
+                                  {d.margin}%
+                                </td>
                               </>
                             )}
                           </tr>
                         ))}
                       </tbody>
                     </table>
+                  </div>
+                  </div>
                   </div>
                 </div>
               </>
