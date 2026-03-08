@@ -11,18 +11,14 @@ import {
   Filter,
   Plus,
   ChevronRight,
-  BarChart3,
-  TrendingUp,
-  Eye,
+  ChevronDown,
   Lock,
-  ArrowUpRight,
-  ArrowDownRight,
+  Youtube,
+  TrendingUp,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import {
-  LineChart,
-  Line,
   BarChart,
   Bar,
   XAxis,
@@ -34,50 +30,50 @@ import {
 } from 'recharts'
 import Link from 'next/link'
 
-const platformColors: Record<string, string> = {
-  YouTube: '#7C3AED',
-  Twitch: '#A78BFA',
-  TikTok: '#C4B5FD',
+const PLATFORM_ICONS: Record<string, React.ReactNode> = {
+  YouTube: <svg className="w-4 h-4 fill-red-600" viewBox="0 0 24 24"><path d="M19.615 3.712c-1.899-.596-7.615-.596-9.514-.596s-7.615 0-9.514.596C.051 4.934.051 8.806.051 12s0 7.066.752 8.288c1.899.596 7.615.596 9.514.596s7.615 0 9.514-.596c.701-1.222.752-5.094.752-8.288 0-3.194 0-7.066-.752-8.288zM9.046 15.13V8.87c3.505.987 3.505 3.077 3.505 3.077 0 3.077 0 3.077-3.505 3.183z"/></svg>,
+  Twitch: <svg className="w-4 h-4 fill-purple-600" viewBox="0 0 24 24"><path d="M11 2H2v20h7v-5h4l4-4v-11h-6zm6 10l-3 3h-4v-3h7z"/></svg>,
+  TikTok: <svg className="w-4 h-4 fill-black dark:fill-white" viewBox="0 0 24 24"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 1 1-5.92-2.46v3.6a6.63 6.63 0 1 0 9.69 5.63V9.01a8.35 8.35 0 0 0 4.84-2.65z"/></svg>,
+  X: <svg className="w-4 h-4 fill-black dark:fill-white" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24h-6.63l-5.195-6.791-5.966 6.791h-3.31l7.73-8.835L2.818 2.25h6.79l4.831 6.397L18.244 2.25zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>,
+  Instagram: <svg className="w-4 h-4 fill-pink-600" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5" fill="none" stroke="currentColor" strokeWidth="2"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" strokeWidth="2"/><circle cx="17.5" cy="6.5" r="1.5" fill="currentColor"/></svg>,
 }
 
-const generateSparklineData = () => [
-  { v: 2.1 }, { v: 3.8 }, { v: 2.9 }, { v: 4.2 }, { v: 3.5 }, { v: 4.8 }, { v: 5.2 }
-]
+const performanceMetricsData = {
+  totalActualViews: 2781450,
+  totalEngagements: 1500890,
+  avgCPM: 45.23,
+  conservativeViews: 2225160, // 80% of actual
+}
 
 export default function CampaignDetailPage({ params }: { params: { id: string } }) {
   const { presentationMode } = usePresentationMode()
   const campaign = MOCK_CAMPAIGNS.find(c => c.id === params.id) || MOCK_CAMPAIGNS[0]
   const [activeTab, setActiveTab] = useState('overview')
+  const [selectedMetric, setSelectedMetric] = useState<'Views' | 'Engagements' | 'CPM'>('Views')
 
-  const sparkline = generateSparklineData()
-
-  // Exact data from spec
-  const kpiData = {
-    totalSpend: { value: '$128,450.00', change: '+12.78%', changeColor: 'green' },
-    forecastedViews: { value: '4.2M', change: '-1.59%', changeColor: 'red' },
-    agencyProfit: { value: '$123,230.00', change: '-17.52%', changeColor: 'red', blurred: true },
-    conservativeViews: { value: '3.36M', change: '+9.1%', changeColor: 'green' },
+  // Chart data for metric selection
+  const chartDataByMetric = {
+    Views: [
+      { date: '03.01', YouTube: 1200000, Twitch: 600000, TikTok: 300000, X: 100000 },
+      { date: '03.07', YouTube: 1400000, Twitch: 700000, TikTok: 350000, X: 120000 },
+      { date: '03.13', YouTube: 1680000, Twitch: 840000, TikTok: 420000, X: 140000 },
+      { date: '03.19', YouTube: 1920000, Twitch: 960000, TikTok: 480000, X: 160000 },
+    ],
+    Engagements: [
+      { date: '03.01', YouTube: 48000, Twitch: 18000, TikTok: 12000, X: 2000 },
+      { date: '03.07', YouTube: 56000, Twitch: 21000, TikTok: 14000, X: 2400 },
+      { date: '03.13', YouTube: 67200, Twitch: 25200, TikTok: 16800, X: 2800 },
+      { date: '03.19', YouTube: 76800, Twitch: 28800, TikTok: 19200, X: 3200 },
+    ],
+    CPM: [
+      { date: '03.01', YouTube: 45, Twitch: 42, TikTok: 38, X: 50 },
+      { date: '03.07', YouTube: 44, Twitch: 41, TikTok: 37, X: 48 },
+      { date: '03.13', YouTube: 46, Twitch: 43, TikTok: 39, X: 52 },
+      { date: '03.19', YouTube: 45, Twitch: 42, TikTok: 38, X: 50 },
+    ],
   }
 
-  const goalProgress = {
-    percentage: 72.6,
-    current: '1.1M',
-    target: '1.5M',
-    gainPotential: '+5.4%',
-  }
-
-  const aiVerification = {
-    percentage: 98.7,
-    text: 'Better accuracy this week',
-  }
-
-  // Chart data with exact dates from spec
-  const chartData = [
-    { date: '03.01', YouTube: 12000000, Twitch: 6000000, TikTok: 3000000, X: 1000000 },
-    { date: '03.07', YouTube: 14200000, Twitch: 7200000, TikTok: 3600000, X: 1200000 },
-    { date: '03.13', YouTube: 16800000, Twitch: 8400000, TikTok: 4200000, X: 1400000 },
-    { date: '03.19', YouTube: 19200000, Twitch: 9600000, TikTok: 4800000, X: 1600000 },
-  ]
+  const currentChartData = chartDataByMetric[selectedMetric]
 
   return (
     <AppShell>
@@ -106,11 +102,8 @@ export default function CampaignDetailPage({ params }: { params: { id: string } 
               <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
                 <Filter size={14} className="text-muted-foreground" />
               </Button>
-              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                <span className="text-xs font-medium text-muted-foreground">Save</span>
-              </Button>
-              <Button size="sm" className="h-8 bg-primary text-primary-foreground hover:bg-primary/90 gap-1.5 text-xs">
-                <Plus size={13} /> Add Deliverable
+              <Button size="sm" className="h-8 bg-primary text-primary-foreground hover:bg-primary/90 gap-1.5 text-xs font-medium px-3">
+                <Plus size={13} /> New Deliverable
               </Button>
             </div>
           </div>
@@ -120,7 +113,7 @@ export default function CampaignDetailPage({ params }: { params: { id: string } 
             <button
               onClick={() => setActiveTab('overview')}
               className={cn(
-                'pb-3 text-xs font-medium border-b-2 transition-colors',
+                'pb-3 text-xs font-semibold border-b-2 transition-colors',
                 activeTab === 'overview'
                   ? 'border-primary text-primary'
                   : 'border-transparent text-muted-foreground hover:text-foreground'
@@ -131,7 +124,7 @@ export default function CampaignDetailPage({ params }: { params: { id: string } 
             <button
               onClick={() => setActiveTab('anomalies')}
               className={cn(
-                'pb-3 text-xs font-medium border-b-2 transition-colors',
+                'pb-3 text-xs font-semibold border-b-2 transition-colors',
                 activeTab === 'anomalies'
                   ? 'border-primary text-primary'
                   : 'border-transparent text-muted-foreground hover:text-foreground'
@@ -142,146 +135,95 @@ export default function CampaignDetailPage({ params }: { params: { id: string } 
           </div>
 
           {activeTab === 'overview' && (
-            <div className="space-y-4">
-              {/* KPI BENTO ROW — 4 Cards */}
+            <div className="space-y-6">
+              {/* KPI CARDS — 4 Cards (Performance Focus, No Trends) */}
               <div className="grid grid-cols-4 gap-4">
-                {/* Card 1: Total Client Spend */}
+                {/* Card 1: Total Actual Views */}
                 <div className="bg-card border border-border rounded-xl p-4">
-                  <p className="text-xs text-muted-foreground font-medium mb-2">Total Client Spend</p>
-                  <p className="text-2xl font-bold text-foreground font-mono mb-3">{kpiData.totalSpend.value}</p>
-                  <div className={cn(
-                    'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold',
-                    kpiData.totalSpend.changeColor === 'green'
-                      ? 'bg-green-50 text-green-700'
-                      : 'bg-red-50 text-red-700'
-                  )}>
-                    {kpiData.totalSpend.changeColor === 'green' ? <ArrowUpRight size={10} /> : <ArrowDownRight size={10} />}
-                    {kpiData.totalSpend.change}
-                  </div>
-                  <ResponsiveContainer width="100%" height={30} className="mt-3">
-                    <LineChart data={sparkline} margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
-                      <Line type="monotone" dataKey="v" stroke="#10B981" strokeWidth={1.5} dot={false} />
-                    </LineChart>
-                  </ResponsiveContainer>
+                  <p className="text-xs text-muted-foreground font-medium mb-2">Total Actual Views</p>
+                  <p className="text-2xl font-bold text-foreground font-mono">{performanceMetricsData.totalActualViews.toLocaleString()}</p>
+                  <p className="text-xs text-muted-foreground mt-1">2.78M detailed</p>
                 </div>
 
-                {/* Card 2: Forecasted Views */}
+                {/* Card 2: Total Engagements */}
                 <div className="bg-card border border-border rounded-xl p-4">
-                  <p className="text-xs text-muted-foreground font-medium mb-2">Forecasted Views</p>
-                  <p className="text-2xl font-bold text-foreground font-mono mb-3">{kpiData.forecastedViews.value}</p>
-                  <div className={cn(
-                    'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold',
-                    kpiData.forecastedViews.changeColor === 'green'
-                      ? 'bg-green-50 text-green-700'
-                      : 'bg-red-50 text-red-700'
-                  )}>
-                    {kpiData.forecastedViews.changeColor === 'green' ? <ArrowUpRight size={10} /> : <ArrowDownRight size={10} />}
-                    {kpiData.forecastedViews.change}
-                  </div>
-                  <ResponsiveContainer width="100%" height={30} className="mt-3">
-                    <LineChart data={sparkline} margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
-                      <Line type="monotone" dataKey="v" stroke="#EF4444" strokeWidth={1.5} dot={false} />
-                    </LineChart>
-                  </ResponsiveContainer>
+                  <p className="text-xs text-muted-foreground font-medium mb-2">Total Engagements</p>
+                  <p className="text-2xl font-bold text-foreground font-mono">{performanceMetricsData.totalEngagements.toLocaleString()}</p>
+                  <p className="text-xs text-muted-foreground mt-1">Likes + Comments + Shares</p>
                 </div>
 
-                {/* Card 3: Accrued Agency Profit (BLURRED) */}
-                <div className={cn(
-                  'bg-card border border-border rounded-xl p-4 relative',
-                  presentationMode && 'opacity-50'
-                )}>
-                  <p className="text-xs text-muted-foreground font-medium mb-2">Accrued Agency Profit</p>
-                  <div className="relative mb-3">
-                    <p className={cn(
-                      'text-2xl font-bold text-foreground font-mono',
-                      presentationMode && 'blur-sm'
-                    )}>
-                      {presentationMode ? '••••••••••' : kpiData.agencyProfit.value}
-                    </p>
-                    {presentationMode && (
-                      <div className="absolute right-0 top-0">
-                        <Lock size={14} className="text-muted-foreground" />
-                      </div>
-                    )}
-                  </div>
-                  <div className={cn(
-                    'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold',
-                    kpiData.agencyProfit.changeColor === 'green'
-                      ? 'bg-green-50 text-green-700'
-                      : 'bg-red-50 text-red-700'
-                  )}>
-                    {kpiData.agencyProfit.changeColor === 'green' ? <ArrowUpRight size={10} /> : <ArrowDownRight size={10} />}
-                    {kpiData.agencyProfit.change}
-                  </div>
-                  <ResponsiveContainer width="100%" height={30} className="mt-3">
-                    <LineChart data={sparkline} margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
-                      <Line type="monotone" dataKey="v" stroke="#EF4444" strokeWidth={1.5} dot={false} />
-                    </LineChart>
-                  </ResponsiveContainer>
+                {/* Card 3: Average Campaign CPM */}
+                <div className="bg-card border border-border rounded-xl p-4">
+                  <p className="text-xs text-muted-foreground font-medium mb-2">Average Campaign CPM</p>
+                  <p className="text-2xl font-bold text-foreground font-mono">${performanceMetricsData.avgCPM.toFixed(2)}</p>
+                  <p className="text-xs text-muted-foreground mt-1">Cost per thousand impressions</p>
                 </div>
 
                 {/* Card 4: Conservative Views (80%) */}
                 <div className="bg-card border border-border rounded-xl p-4">
                   <p className="text-xs text-muted-foreground font-medium mb-2">Conservative Views (80%)</p>
-                  <p className="text-2xl font-bold text-foreground font-mono mb-3">{kpiData.conservativeViews.value}</p>
-                  <div className={cn(
-                    'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold',
-                    kpiData.conservativeViews.changeColor === 'green'
-                      ? 'bg-green-50 text-green-700'
-                      : 'bg-red-50 text-red-700'
-                  )}>
-                    {kpiData.conservativeViews.changeColor === 'green' ? <ArrowUpRight size={10} /> : <ArrowDownRight size={10} />}
-                    {kpiData.conservativeViews.change}
-                  </div>
-                  <ResponsiveContainer width="100%" height={30} className="mt-3">
-                    <LineChart data={sparkline} margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
-                      <Line type="monotone" dataKey="v" stroke="#10B981" strokeWidth={1.5} dot={false} />
-                    </LineChart>
-                  </ResponsiveContainer>
+                  <p className="text-2xl font-bold text-foreground font-mono">{performanceMetricsData.conservativeViews.toLocaleString()}</p>
+                  <p className="text-xs text-muted-foreground mt-1">Lower confidence estimate</p>
                 </div>
               </div>
 
-              {/* ANALYTICS + EFFICIENCY GRID */}
+              {/* ANALYTICS SECTION — 3-Column Layout */}
               <div className="grid grid-cols-3 gap-4">
                 {/* Large Analytics Card (2 cols) */}
                 <div className="col-span-2 bg-card border border-border rounded-xl p-5">
-                  <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-sm font-semibold text-foreground">Views by Platform</h2>
-                    <Badge variant="outline" className="text-[10px]">Weekly</Badge>
+                  <div className="flex items-center justify-between mb-5">
+                    <h2 className="text-sm font-semibold text-foreground">Performance Analytics</h2>
+                    <div className="flex items-center gap-2">
+                      <div className="relative">
+                        <select
+                          value={selectedMetric}
+                          onChange={(e) => setSelectedMetric(e.target.value as 'Views' | 'Engagements' | 'CPM')}
+                          className="appearance-none bg-secondary text-foreground text-xs font-medium px-3 py-1.5 rounded-md border border-border cursor-pointer pr-7"
+                        >
+                          <option>Views</option>
+                          <option>Engagements</option>
+                          <option>CPM</option>
+                        </select>
+                        <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground" />
+                      </div>
+                      <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
+                        <Filter size={12} className="text-muted-foreground" />
+                      </Button>
+                    </div>
                   </div>
-                  <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 30 }}>
+
+                  <ResponsiveContainer width="100%" height={280}>
+                    <BarChart data={currentChartData} margin={{ top: 10, right: 20, left: 0, bottom: 20 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false} />
                       <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#6B7280' }} />
-                      <YAxis 
-                        tick={{ fontSize: 10, fill: '#6B7280' }}
-                        label={{ value: 'Views (Millions)', angle: -90, position: 'insideLeft', style: { fontSize: 10 } }}
-                      />
+                      <YAxis tick={{ fontSize: 10, fill: '#6B7280' }} />
                       <Tooltip
                         contentStyle={{ backgroundColor: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: '6px' }}
                         labelStyle={{ color: '#1F2937', fontSize: '11px' }}
-                        formatter={(value) => `${(value as number / 1000000).toFixed(1)}M`}
+                        formatter={(value) => {
+                          if (selectedMetric === 'CPM') return `$${value}`
+                          if (selectedMetric === 'Engagements') return value.toLocaleString()
+                          return `${(value as number / 1000000).toFixed(1)}M`
+                        }}
                       />
                       <Legend wrapperStyle={{ fontSize: '11px' }} />
-                      <Bar dataKey="YouTube" fill="#7C3AED" stackId="platform" radius={[4, 4, 0, 0]} />
-                      <Bar dataKey="Twitch" fill="#A78BFA" stackId="platform" radius={[4, 4, 0, 0]} />
-                      <Bar dataKey="TikTok" fill="#C4B5FD" stackId="platform" radius={[4, 4, 0, 0]} />
-                      <Bar dataKey="X" fill="#F97316" stackId="platform" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="YouTube" fill="#7C3AED" stackId="metric" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="Twitch" fill="#A78BFA" stackId="metric" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="TikTok" fill="#C4B5FD" stackId="metric" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="X" fill="#F97316" stackId="metric" radius={[4, 4, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
 
-                {/* Right Column: Goal Progress + AI Verification */}
+                {/* Right Column: Efficiency Cards */}
                 <div className="space-y-4">
-                  {/* Campaign Goal Progress */}
+                  {/* Engagement Target Progress */}
                   <div className="bg-card border border-border rounded-xl p-5">
-                    <p className="text-xs text-muted-foreground font-medium mb-4">Campaign Goal Progress (External)</p>
+                    <p className="text-xs text-muted-foreground font-medium mb-4">Engagement Target Progress</p>
                     <div className="flex flex-col items-center justify-center gap-3">
                       {/* Segmented Ring Progress */}
                       <svg width="100" height="100" viewBox="0 0 100 100" className="shrink-0">
-                        {/* Background ring */}
                         <circle cx="50" cy="50" r="40" fill="none" stroke="#E5E7EB" strokeWidth="6" />
-                        {/* Progress ring */}
                         <circle
                           cx="50"
                           cy="50"
@@ -289,19 +231,18 @@ export default function CampaignDetailPage({ params }: { params: { id: string } 
                           fill="none"
                           stroke="#7C3AED"
                           strokeWidth="6"
-                          strokeDasharray={`${40 * 2 * Math.PI * (goalProgress.percentage / 100)} ${40 * 2 * Math.PI}`}
+                          strokeDasharray={`${40 * 2 * Math.PI * 0.746} ${40 * 2 * Math.PI}`}
                           strokeLinecap="round"
                           transform="rotate(-90 50 50)"
                         />
-                        {/* Center text */}
                         <text x="50" y="55" textAnchor="middle" fontSize="24" fontWeight="bold" fill="#1F2937">
-                          {goalProgress.percentage}%
+                          74.6%
                         </text>
                       </svg>
                       <div className="text-center">
-                        <p className="text-xs text-muted-foreground">{goalProgress.current} / {goalProgress.target} views</p>
+                        <p className="text-xs text-muted-foreground">1.5M / 2.0M target</p>
                         <div className="inline-flex items-center gap-1 bg-green-50 text-green-700 px-2 py-1 rounded-full text-[10px] font-semibold mt-2">
-                          <TrendingUp size={10} /> {goalProgress.gainPotential} gain potential
+                          <TrendingUp size={10} /> +5.4% gain potential
                         </div>
                       </div>
                     </div>
@@ -309,15 +250,15 @@ export default function CampaignDetailPage({ params }: { params: { id: string } 
 
                   {/* AI Data Verification Rate */}
                   <div className="bg-card border border-border rounded-xl p-5">
-                    <p className="text-xs text-muted-foreground font-medium mb-4">AI Data Verification Rate</p>
+                    <p className="text-xs text-muted-foreground font-medium mb-4">AI Data Verification</p>
                     <div className="space-y-3">
                       <div className="text-center">
-                        <p className="text-3xl font-bold text-foreground">{aiVerification.percentage}%</p>
+                        <p className="text-3xl font-bold text-foreground">98.7%</p>
                       </div>
                       <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
-                        <div className="h-full bg-green-500 rounded-full" style={{ width: `${aiVerification.percentage}%` }} />
+                        <div className="h-full bg-green-500 rounded-full" style={{ width: '98.7%' }} />
                       </div>
-                      <p className="text-xs text-muted-foreground text-center">{aiVerification.text}</p>
+                      <p className="text-xs text-muted-foreground text-center">Data sources verified</p>
                     </div>
                   </div>
                 </div>
@@ -326,15 +267,15 @@ export default function CampaignDetailPage({ params }: { params: { id: string } 
               {/* DELIVERABLES TABLE — Full Width */}
               <div className="bg-card border border-border rounded-xl overflow-hidden">
                 <div className="px-6 py-4 border-b border-border/50">
-                  <h3 className="text-sm font-semibold text-foreground">Deliverables Table</h3>
+                  <h3 className="text-sm font-semibold text-foreground">Deliverables</h3>
                 </div>
 
                 <div className="overflow-x-auto">
                   <table className="w-full text-xs">
                     <thead>
                       <tr className="border-b border-border/50 bg-secondary/30">
-                        <th className="text-left px-5 py-3 text-muted-foreground font-medium">
-                          <div className="flex items-center gap-1">Platform <ChevronRight size={10} /></div>
+                        <th className="text-center px-4 py-3 text-muted-foreground font-medium">
+                          <div className="flex items-center gap-1 justify-center">Platform <ChevronRight size={10} /></div>
                         </th>
                         <th className="text-left px-5 py-3 text-muted-foreground font-medium">
                           <div className="flex items-center gap-1">Creator <ChevronRight size={10} /></div>
@@ -346,10 +287,10 @@ export default function CampaignDetailPage({ params }: { params: { id: string } 
                           <div className="flex items-center gap-1 justify-end">Views <ChevronRight size={10} /></div>
                         </th>
                         <th className="text-right px-5 py-3 text-muted-foreground font-medium">
-                          <div className="flex items-center gap-1 justify-end">Change <ChevronRight size={10} /></div>
+                          <div className="flex items-center gap-1 justify-end">Engagements <ChevronRight size={10} /></div>
                         </th>
                         <th className="text-right px-5 py-3 text-muted-foreground font-medium">
-                          <div className="flex items-center gap-1 justify-end">Progress <ChevronRight size={10} /></div>
+                          <div className="flex items-center gap-1 justify-end">CPM <ChevronRight size={10} /></div>
                         </th>
                         {!presentationMode && (
                           <>
@@ -364,59 +305,71 @@ export default function CampaignDetailPage({ params }: { params: { id: string } 
                       </tr>
                     </thead>
                     <tbody>
-                      {MOCK_DELIVERABLES.slice(0, 5).map((d, idx) => (
-                        <tr key={idx} className="border-b border-border/50 hover:bg-secondary/40 transition-colors">
-                          <td className="px-5 py-3 font-semibold text-foreground">{d.creator.platform}</td>
-                          <td className="px-5 py-3">
-                            <div className="flex items-center gap-2.5">
-                              <div className="w-5 h-5 rounded-full bg-primary/15 flex items-center justify-center shrink-0">
-                                <span className="text-primary text-[8px] font-bold">{d.creator.avatar}</span>
+                      {MOCK_DELIVERABLES.slice(0, 6).map((d, idx) => {
+                        const views = d.youtube?.avg30dLong || d.tiktok?.views || 0
+                        const engagements = Math.floor((views * 0.054)) // 5.4% engagement rate
+                        const cpm = d.cpm || 45.23
+
+                        return (
+                          <tr key={idx} className="border-b border-border/50 hover:bg-secondary/40 transition-colors">
+                            <td className="text-center px-4 py-3">
+                              {d.creator.platform === 'YouTube' && PLATFORM_ICONS.YouTube}
+                              {d.creator.platform === 'Twitch' && PLATFORM_ICONS.Twitch}
+                              {d.creator.platform === 'TikTok' && PLATFORM_ICONS.TikTok}
+                            </td>
+                            <td className="px-5 py-3">
+                              <div className="flex items-center gap-2.5">
+                                <div className="w-5 h-5 rounded-full bg-primary/15 flex items-center justify-center shrink-0">
+                                  <span className="text-primary text-[8px] font-bold">{d.creator.avatar}</span>
+                                </div>
+                                <div className="min-w-0">
+                                  <p className="font-medium text-foreground text-xs truncate">{d.creator.handle}</p>
+                                </div>
                               </div>
-                              <div className="min-w-0">
-                                <p className="font-medium text-foreground text-xs truncate">{d.creator.handle}</p>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-5 py-3 text-muted-foreground text-xs">{d.contentType}</td>
-                          <td className="text-right px-5 py-3 font-mono font-bold text-foreground">
-                            {d.youtube?.avg30dLong ? `${(d.youtube.avg30dLong / 1000000).toFixed(1)}M` : d.tiktok?.views ? `${(d.tiktok.views / 1000000).toFixed(1)}M` : '—'}
-                          </td>
-                          <td className="text-right px-5 py-3">
-                            <span className="font-mono font-semibold text-green-600">+10.2%</span>
-                          </td>
-                          <td className="text-right px-5 py-3">
-                            <ResponsiveContainer width={50} height={20} className="inline-block">
-                              <LineChart data={sparkline} margin={{ top: 2, right: 2, bottom: 2, left: 2 }}>
-                                <Line type="monotone" dataKey="v" stroke="#7C3AED" strokeWidth={1} dot={false} />
-                              </LineChart>
-                            </ResponsiveContainer>
-                          </td>
-                          {!presentationMode && (
-                            <>
-                              <td className="text-right px-5 py-3 font-mono text-foreground text-xs">
-                                ${d.internalPrice.toLocaleString()}
-                              </td>
-                              <td className={cn(
-                                'text-right px-5 py-3 font-mono font-semibold text-emerald-600 text-xs',
-                                presentationMode && 'blur-sm opacity-30'
-                              )}>
-                                {d.margin}%
-                              </td>
-                            </>
-                          )}
-                        </tr>
-                      ))}
+                            </td>
+                            <td className="px-5 py-3 text-muted-foreground text-xs">{d.contentType}</td>
+                            <td className="text-right px-5 py-3 font-mono font-bold text-foreground">
+                              {views.toLocaleString()}
+                            </td>
+                            <td className="text-right px-5 py-3 font-mono font-bold text-foreground">
+                              {engagements.toLocaleString()}
+                            </td>
+                            <td className="text-right px-5 py-3 font-mono font-bold text-foreground">
+                              ${cpm.toFixed(2)}
+                            </td>
+                            {!presentationMode && (
+                              <>
+                                <td className="text-right px-5 py-3 font-mono text-foreground">
+                                  ${d.internalPrice.toLocaleString()}
+                                </td>
+                                <td className="text-right px-5 py-3 font-mono font-semibold text-emerald-600">
+                                  ${Math.round(d.clientPrice - d.internalPrice).toLocaleString()}
+                                </td>
+                              </>
+                            )}
+                            {presentationMode && (
+                              <>
+                                <td className="text-right px-5 py-3 font-mono text-foreground relative">
+                                  <div className="flex items-center justify-end gap-1.5">
+                                    <span className="blur-sm">$80,000</span>
+                                    <Lock size={12} className="text-muted-foreground" />
+                                  </div>
+                                </td>
+                                <td className="text-right px-5 py-3 font-mono font-semibold text-emerald-600 relative">
+                                  <div className="flex items-center justify-end gap-1.5">
+                                    <span className="blur-sm">$28,000</span>
+                                    <Lock size={12} className="text-muted-foreground" />
+                                  </div>
+                                </td>
+                              </>
+                            )}
+                          </tr>
+                        )
+                      })}
                     </tbody>
                   </table>
                 </div>
               </div>
-            </div>
-          )}
-
-          {activeTab === 'anomalies' && (
-            <div className="bg-card border border-border rounded-lg p-8 text-center">
-              <BarChart3 size={32} className="text-muted-foreground mx-auto mb-3" />
-              <p className="text-sm text-muted-foreground">Anomaly detection coming soon</p>
             </div>
           )}
         </div>
