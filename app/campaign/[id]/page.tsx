@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { AppShell } from '@/components/app-shell'
 import { MOCK_DELIVERABLES, MOCK_CAMPAIGN_ANALYTICS, MOCK_CAMPAIGNS } from '@/lib/mock-data'
 import { usePresentationMode } from '@/contexts/presentation-mode'
@@ -23,6 +23,10 @@ import {
   Calendar,
   ArrowUpDown,
   Pencil,
+  Clock,
+  FileDown,
+  Play,
+  Trophy,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -119,7 +123,11 @@ export default function CampaignDetailPage({ params }: { params: { id: string } 
   const [sortColumn, setSortColumn] = useState<string | null>(null)
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
   const [dateRange, setDateRange] = useState('all')
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate] = useState('')
   const [deliverableFilter, setDeliverableFilter] = useState('all')
+  const [showRefreshSettings, setShowRefreshSettings] = useState(false)
+  const [autoRefreshInterval, setAutoRefreshInterval] = useState('off')
   const [visibleColumns, setVisibleColumns] = useState({
     datePosted: true,
     views: true,
@@ -168,6 +176,165 @@ export default function CampaignDetailPage({ params }: { params: { id: string } 
     </button>
   )
 
+  // Pre-process deliverables with computed values for sorting
+  const processedDeliverables = useMemo(() => {
+    return MOCK_DELIVERABLES.slice(0, 7).map((d, idx) => {
+      const views = d.youtube?.avg30dLong || d.tiktok?.views || 250000 + idx * 50000
+      const likes = Math.floor(views * 0.042)
+      const comments = Math.floor(views * 0.008)
+      const shares = Math.floor(views * 0.004)
+      const engagements = likes + comments + shares
+      const engagementRate = (engagements / views) * 100
+      const internalCost = d.internalPrice
+      const clientCost = d.clientPrice
+      const profit = clientCost - internalCost
+      const profitMargin = (profit / clientCost) * 100
+      const internalCpm = (internalCost / views) * 1000
+      const externalCpm = (clientCost / views) * 1000
+      const isLivestream = d.contentType === 'Stream' || d.creator.platform === 'Twitch'
+      const vodViews = isLivestream ? Math.floor(views * 0.35) : null
+      const avgCcv = isLivestream ? Math.floor(12000 + idx * 3500) : null
+      const maxCcv = isLivestream ? Math.floor((avgCcv || 0) * 1.8) : null
+      const datePosted = new Date(Date.now() - (idx * 4 + 2) * 24 * 60 * 60 * 1000)
+      
+      return {
+        ...d,
+        idx,
+        views,
+        likes,
+        comments,
+        shares,
+        engagements,
+        engagementRate,
+        internalCost,
+        clientCost,
+        profit,
+        profitMargin,
+        internalCpm,
+        externalCpm,
+        vodViews,
+        avgCcv,
+        maxCcv,
+        datePosted,
+      }
+    })
+  }, [])
+
+  // Filter deliverables by date range
+  const filteredDeliverables = useMemo(() => {
+    let filtered = processedDeliverables
+
+    if (dateRange === 'custom' && startDate && endDate) {
+      const start = new Date(startDate)
+      const end = new Date(endDate)
+      filtered = filtered.filter(d => d.datePosted >= start && d.datePosted <= end)
+    } else if (dateRange !== 'all') {
+      const now = new Date()
+      let daysAgo = 0
+      if (dateRange === '7d') daysAgo = 7
+      else if (dateRange === '30d') daysAgo = 30
+      else if (dateRange === '90d') daysAgo = 90
+      
+      const cutoff = new Date(now.getTime() - daysAgo * 24 * 60 * 60 * 1000)
+      filtered = filtered.filter(d => d.datePosted >= cutoff)
+    }
+
+    return filtered
+  }, [processedDeliverables, dateRange, startDate, endDate])
+
+  // Sort deliverables based on sortColumn and sortDirection
+  const sortedDeliverables = useMemo(() => {
+    if (!sortColumn) return filteredDeliverables
+
+    return [...filteredDeliverables].sort((a, b) => {
+      let aVal: string | number | Date
+      let bVal: string | number | Date
+
+      switch (sortColumn) {
+        case 'creator':
+          aVal = a.creator.handle.toLowerCase()
+          bVal = b.creator.handle.toLowerCase()
+          break
+        case 'type':
+          aVal = a.contentType.toLowerCase()
+          bVal = b.contentType.toLowerCase()
+          break
+        case 'datePosted':
+          aVal = a.datePosted.getTime()
+          bVal = b.datePosted.getTime()
+          break
+        case 'views':
+          aVal = a.views
+          bVal = b.views
+          break
+        case 'likes':
+          aVal = a.likes
+          bVal = b.likes
+          break
+        case 'comments':
+          aVal = a.comments
+          bVal = b.comments
+          break
+        case 'shares':
+          aVal = a.shares
+          bVal = b.shares
+          break
+        case 'engagements':
+          aVal = a.engagements
+          bVal = b.engagements
+          break
+        case 'engagementRate':
+          aVal = a.engagementRate
+          bVal = b.engagementRate
+          break
+        case 'vodViews':
+          aVal = a.vodViews || 0
+          bVal = b.vodViews || 0
+          break
+        case 'avgCcv':
+          aVal = a.avgCcv || 0
+          bVal = b.avgCcv || 0
+          break
+        case 'maxCcv':
+          aVal = a.maxCcv || 0
+          bVal = b.maxCcv || 0
+          break
+        case 'internalCost':
+          aVal = a.internalCost
+          bVal = b.internalCost
+          break
+        case 'clientCost':
+          aVal = a.clientCost
+          bVal = b.clientCost
+          break
+        case 'profitMargin':
+          aVal = a.profitMargin
+          bVal = b.profitMargin
+          break
+        case 'internalCpm':
+          aVal = a.internalCpm
+          bVal = b.internalCpm
+          break
+        case 'externalCpm':
+          aVal = a.externalCpm
+          bVal = b.externalCpm
+          break
+        default:
+          return 0
+      }
+
+      if (typeof aVal === 'string' && typeof bVal === 'string') {
+        return sortDirection === 'asc' 
+          ? aVal.localeCompare(bVal)
+          : bVal.localeCompare(aVal)
+      }
+      
+      return sortDirection === 'asc' 
+        ? (aVal as number) - (bVal as number)
+        : (bVal as number) - (aVal as number)
+    })
+  }, [filteredDeliverables, sortColumn, sortDirection])
+
   const chartData = [
     { date: '03.01', YouTube: 1200000, Twitch: 600000, TikTok: 300000, Instagram: 150000 },
     { date: '03.07', YouTube: 1400000, Twitch: 700000, TikTok: 350000, Instagram: 175000 },
@@ -199,11 +366,11 @@ export default function CampaignDetailPage({ params }: { params: { id: string } 
   ]
 
   const topPostsData = [
-    { name: 'MrBeast - Dedicated', value: 456000, color: '#7C3AED' },
-    { name: 'Pokimane - Stream', value: 324000, color: '#9146FF' },
-    { name: 'Ninja - Short', value: 287000, color: '#10B981' },
-    { name: 'xQc - Sponsor', value: 198000, color: '#F59E0B' },
-    { name: 'Others', value: 516450, color: '#6B7280' },
+    { rank: 1, creator: 'MrBeast', type: 'Dedicated Video', platform: 'YouTube', views: 456000, er: 6.2 },
+    { rank: 2, creator: 'Pokimane', type: 'Stream', platform: 'Twitch', views: 324000, er: 8.4 },
+    { rank: 3, creator: 'Ninja', type: 'YouTube Short', platform: 'YouTube', views: 287000, er: 4.8 },
+    { rank: 4, creator: 'xQc', type: 'Sponsorship', platform: 'Twitch', views: 198000, er: 7.1 },
+    { rank: 5, creator: 'Valkyrae', type: 'Dedicated Video', platform: 'YouTube', views: 176000, er: 5.9 },
   ]
 
   return (
@@ -220,15 +387,15 @@ export default function CampaignDetailPage({ params }: { params: { id: string } 
           {/* Title & Progress */}
           <div className="flex items-center justify-between">
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
                 <h1 className="text-2xl font-bold text-foreground">Q1 Gaming Push</h1>
                 <Button 
-                  variant="ghost" 
+                  variant="outline" 
                   size="sm" 
                   onClick={() => setShowEditCampaignDialog(true)}
-                  className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
+                  className="h-7 gap-1.5 text-xs border-border px-2.5"
                 >
-                  <Pencil size={13} />
+                  <Pencil size={12} /> Edit
                 </Button>
               </div>
               <div className="flex items-center gap-3 mt-2">
@@ -240,9 +407,42 @@ export default function CampaignDetailPage({ params }: { params: { id: string } 
             </div>
             {/* Action Bar */}
             <div className="flex items-center gap-1.5">
-              <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs border-border">
-                <RefreshCw size={13} /> Refresh Data
-              </Button>
+              {/* Refresh Data with Auto-Refresh Popover */}
+              <Popover open={showRefreshSettings} onOpenChange={setShowRefreshSettings}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs border-border">
+                    <RefreshCw size={13} className={autoRefreshInterval !== 'off' ? 'animate-spin' : ''} /> 
+                    Refresh {autoRefreshInterval !== 'off' && <span className="text-primary">({autoRefreshInterval})</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent align="end" className="w-52 p-3">
+                  <div className="space-y-3">
+                    <p className="text-xs font-semibold text-foreground">Auto-Refresh Settings</p>
+                    <Select value={autoRefreshInterval} onValueChange={setAutoRefreshInterval}>
+                      <SelectTrigger className="h-8 text-xs border-border">
+                        <Clock size={12} className="mr-1.5" />
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="off">Off</SelectItem>
+                        <SelectItem value="30s">Every 30 seconds</SelectItem>
+                        <SelectItem value="1m">Every 1 minute</SelectItem>
+                        <SelectItem value="5m">Every 5 minutes</SelectItem>
+                        <SelectItem value="15m">Every 15 minutes</SelectItem>
+                        <SelectItem value="30m">Every 30 minutes</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Button 
+                      size="sm" 
+                      className="w-full h-7 text-xs"
+                      onClick={() => setShowRefreshSettings(false)}
+                    >
+                      Refresh Now
+                    </Button>
+                  </div>
+                </PopoverContent>
+              </Popover>
+              
               <Button 
                 variant="outline" 
                 size="sm" 
@@ -286,8 +486,16 @@ export default function CampaignDetailPage({ params }: { params: { id: string } 
           {/* OVERVIEW TAB */}
           {activeTab === 'overview' && (
             <div className="space-y-6">
-              {/* KPI ROW — 5 Cards */}
+              {/* KPI ROW — 5 Cards (Reordered: Deliverables, Views, ER, CPM, Spend) */}
               <div className="grid grid-cols-5 gap-4">
+                <div className="bg-card border border-border rounded-xl p-5">
+                  <p className="text-xs text-muted-foreground font-medium mb-2">Content Deliverables</p>
+                  <p className="text-2xl font-bold text-foreground font-mono">35/40</p>
+                  <div className="w-full h-1 bg-secondary rounded-full mt-2 overflow-hidden">
+                    <div className="h-full bg-primary rounded-full" style={{ width: '87.5%' }} />
+                  </div>
+                </div>
+
                 <div className="bg-card border border-border rounded-xl p-5">
                   <p className="text-xs text-muted-foreground font-medium mb-2">Total Views</p>
                   <p className="text-2xl font-bold text-foreground font-mono">2,781,450</p>
@@ -299,21 +507,13 @@ export default function CampaignDetailPage({ params }: { params: { id: string } 
                 </div>
 
                 <div className="bg-card border border-border rounded-xl p-5">
-                  <p className="text-xs text-muted-foreground font-medium mb-2">Content Deliverables</p>
-                  <p className="text-2xl font-bold text-foreground font-mono">35/40</p>
-                  <div className="w-full h-1 bg-secondary rounded-full mt-2 overflow-hidden">
-                    <div className="h-full bg-primary rounded-full" style={{ width: '87.5%' }} />
-                  </div>
+                  <p className="text-xs text-muted-foreground font-medium mb-2">External CPM</p>
+                  <p className="text-2xl font-bold text-foreground font-mono">$46.18</p>
                 </div>
 
                 <div className={cn("bg-card border border-border rounded-xl p-5", presentationMode && "opacity-40")}>
-                  <p className="text-xs text-muted-foreground font-medium mb-2">Total Client Cost</p>
+                  <p className="text-xs text-muted-foreground font-medium mb-2">Total Client Spend</p>
                   <p className="text-2xl font-bold text-foreground font-mono">{presentationMode ? '••••••' : '$128,450'}</p>
-                </div>
-
-                <div className="bg-card border border-border rounded-xl p-5">
-                  <p className="text-xs text-muted-foreground font-medium mb-2">External CPM</p>
-                  <p className="text-2xl font-bold text-foreground font-mono">$46.18</p>
                 </div>
               </div>
 
@@ -329,20 +529,62 @@ export default function CampaignDetailPage({ params }: { params: { id: string } 
                     
                     {/* All controls in a single row */}
                     <div className="flex items-center gap-2 flex-wrap">
-                      {/* Date Range Selector */}
-                      <Select value={dateRange} onValueChange={setDateRange}>
-                        <SelectTrigger className="h-7 w-36 text-xs border-border bg-background">
-                          <Calendar size={12} className="mr-1.5 shrink-0" />
-                          <SelectValue placeholder="Date Range" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">All Time</SelectItem>
-                          <SelectItem value="7d">Last 7 Days</SelectItem>
-                          <SelectItem value="30d">Last 30 Days</SelectItem>
-                          <SelectItem value="90d">Last 90 Days</SelectItem>
-                          <SelectItem value="custom">Custom Range</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      {/* Date Range Selector with Custom Picker */}
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button variant="outline" size="sm" className="h-7 gap-1.5 text-xs px-2.5 border-border bg-background">
+                            <Calendar size={12} />
+                            {dateRange === 'custom' && startDate && endDate 
+                              ? `${startDate} - ${endDate}`
+                              : dateRange === 'all' ? 'All Time' 
+                              : dateRange === '7d' ? 'Last 7 Days'
+                              : dateRange === '30d' ? 'Last 30 Days'
+                              : dateRange === '90d' ? 'Last 90 Days'
+                              : 'Date Range'}
+                            <ChevronDown size={10} />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent align="start" className="w-64 p-3">
+                          <div className="space-y-3">
+                            <p className="text-xs font-semibold text-foreground">Date Range</p>
+                            <Select value={dateRange} onValueChange={setDateRange}>
+                              <SelectTrigger className="h-8 text-xs border-border">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="all">All Time</SelectItem>
+                                <SelectItem value="7d">Last 7 Days</SelectItem>
+                                <SelectItem value="30d">Last 30 Days</SelectItem>
+                                <SelectItem value="90d">Last 90 Days</SelectItem>
+                                <SelectItem value="custom">Custom Range</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            
+                            {dateRange === 'custom' && (
+                              <div className="space-y-2 pt-2 border-t border-border">
+                                <div>
+                                  <label className="text-[10px] text-muted-foreground mb-1 block">Start Date</label>
+                                  <Input 
+                                    type="date" 
+                                    value={startDate}
+                                    onChange={(e) => setStartDate(e.target.value)}
+                                    className="h-8 text-xs border-border"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="text-[10px] text-muted-foreground mb-1 block">End Date</label>
+                                  <Input 
+                                    type="date" 
+                                    value={endDate}
+                                    onChange={(e) => setEndDate(e.target.value)}
+                                    className="h-8 text-xs border-border"
+                                  />
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </PopoverContent>
+                      </Popover>
 
                       {/* Deliverable Type Filter */}
                       <Select value={deliverableFilter} onValueChange={setDeliverableFilter}>
@@ -460,15 +702,21 @@ export default function CampaignDetailPage({ params }: { params: { id: string } 
                             <Download size={12} /> Export <ChevronDown size={10} />
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-44">
+                        <DropdownMenuContent align="end" className="w-48">
+                          <div className="px-2 py-1.5 text-[10px] font-semibold text-muted-foreground uppercase">Data Export</div>
                           <DropdownMenuItem className="text-xs gap-2 cursor-pointer">
                             <FileSpreadsheet size={12} /> Google Sheets
                           </DropdownMenuItem>
                           <DropdownMenuItem className="text-xs gap-2 cursor-pointer">
                             <FileText size={12} /> CSV
                           </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <div className="px-2 py-1.5 text-[10px] font-semibold text-muted-foreground uppercase">Reports</div>
                           <DropdownMenuItem className="text-xs gap-2 cursor-pointer">
-                            <FileText size={12} /> PDF
+                            <FileDown size={12} /> Campaign Report (PDF)
+                          </DropdownMenuItem>
+                          <DropdownMenuItem className="text-xs gap-2 cursor-pointer">
+                            <FileDown size={12} /> Executive Summary (PDF)
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -499,35 +747,17 @@ export default function CampaignDetailPage({ params }: { params: { id: string } 
                         {visibleColumns.maxCcv && <th className="text-right px-4 py-3 text-muted-foreground font-medium text-xs"><SortableHeader column="maxCcv" label="Max CCV" /></th>}
                         {visibleColumns.internalCost && <th className="text-right px-4 py-3 text-muted-foreground font-medium text-xs">{presentationMode ? <Lock size={10} /> : <SortableHeader column="internalCost" label="Int. Cost" />}</th>}
                         {visibleColumns.clientCost && <th className="text-right px-4 py-3 text-muted-foreground font-medium text-xs">{presentationMode ? <Lock size={10} /> : <SortableHeader column="clientCost" label="Client Cost" />}</th>}
-                        {visibleColumns.profitMargin && <th className="text-right px-4 py-3 text-muted-foreground font-medium text-xs">{presentationMode ? <Lock size={10} /> : <SortableHeader column="profitMargin" label="Profit" />}</th>}
+                        {visibleColumns.profitMargin && <th className="text-right px-4 py-3 text-muted-foreground font-medium text-xs">{presentationMode ? <Lock size={10} /> : <SortableHeader column="profitMargin" label="Margin %" />}</th>}
                         {visibleColumns.internalCpm && <th className="text-right px-4 py-3 text-muted-foreground font-medium text-xs">{presentationMode ? <Lock size={10} /> : <SortableHeader column="internalCpm" label="Int. CPM" />}</th>}
                         {visibleColumns.externalCpm && <th className="text-right px-4 py-3 text-muted-foreground font-medium text-xs"><SortableHeader column="externalCpm" label="Ext. CPM" /></th>}
                       </tr>
                     </thead>
                     <tbody>
-                      {MOCK_DELIVERABLES.slice(0, 7).map((d, idx) => {
-                        const views = d.youtube?.avg30dLong || d.tiktok?.views || 250000 + idx * 50000
-                        const likes = Math.floor(views * 0.042)
-                        const comments = Math.floor(views * 0.008)
-                        const shares = Math.floor(views * 0.004)
-                        const engagements = likes + comments + shares
-                        const engagementRate = ((engagements / views) * 100).toFixed(2)
-                        const internalCost = d.internalPrice
-                        const clientCost = d.clientPrice
-                        const profit = clientCost - internalCost
-                        const internalCpm = ((internalCost / views) * 1000).toFixed(2)
-                        const externalCpm = ((clientCost / views) * 1000).toFixed(2)
-                        // Livestream metrics (simulated for streams)
-                        const isLivestream = d.contentType === 'Stream' || d.creator.platform === 'Twitch'
-                        const vodViews = isLivestream ? Math.floor(views * 0.35) : null
-                        const avgCcv = isLivestream ? Math.floor(12000 + idx * 3500) : null
-                        const maxCcv = isLivestream ? Math.floor((avgCcv || 0) * 1.8) : null
-                        // Simulated date posted (within last 30 days)
-                        const datePosted = new Date(Date.now() - (idx * 4 + 2) * 24 * 60 * 60 * 1000)
-                        const formattedDate = datePosted.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                      {sortedDeliverables.map((d) => {
+                        const formattedDate = d.datePosted.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 
                         return (
-                          <tr key={idx} className="border-b border-border/50 hover:bg-secondary/40 transition-colors text-xs">
+                          <tr key={d.idx} className="border-b border-border/50 hover:bg-secondary/40 transition-colors text-xs">
                             <td className="text-center px-4 py-3">
                               {PLATFORM_ICONS[d.creator.platform] || PLATFORM_ICONS.YouTube}
                             </td>
@@ -541,36 +771,36 @@ export default function CampaignDetailPage({ params }: { params: { id: string } 
                             </td>
                             <td className="px-5 py-3 text-muted-foreground">{d.contentType}</td>
                             {visibleColumns.datePosted && <td className="text-left px-4 py-3 text-muted-foreground">{formattedDate}</td>}
-                            {visibleColumns.views && <td className="text-right px-4 py-3 font-mono font-bold text-foreground">{views.toLocaleString()}</td>}
-                            {visibleColumns.likes && <td className="text-right px-4 py-3 font-mono text-foreground">{likes.toLocaleString()}</td>}
-                            {visibleColumns.comments && <td className="text-right px-4 py-3 font-mono text-foreground">{comments.toLocaleString()}</td>}
-                            {visibleColumns.shares && <td className="text-right px-4 py-3 font-mono text-foreground">{shares.toLocaleString()}</td>}
-                            {visibleColumns.engagements && <td className="text-right px-4 py-3 font-mono font-bold text-foreground">{engagements.toLocaleString()}</td>}
-                            {visibleColumns.engagementRate && <td className="text-right px-4 py-3 font-mono text-foreground">{engagementRate}%</td>}
-                            {visibleColumns.vodViews && <td className="text-right px-4 py-3 font-mono text-foreground">{vodViews ? vodViews.toLocaleString() : '—'}</td>}
-                            {visibleColumns.avgCcv && <td className="text-right px-4 py-3 font-mono text-foreground">{avgCcv ? avgCcv.toLocaleString() : '—'}</td>}
-                            {visibleColumns.maxCcv && <td className="text-right px-4 py-3 font-mono text-foreground">{maxCcv ? maxCcv.toLocaleString() : '—'}</td>}
+                            {visibleColumns.views && <td className="text-right px-4 py-3 font-mono font-bold text-foreground">{d.views.toLocaleString()}</td>}
+                            {visibleColumns.likes && <td className="text-right px-4 py-3 font-mono text-foreground">{d.likes.toLocaleString()}</td>}
+                            {visibleColumns.comments && <td className="text-right px-4 py-3 font-mono text-foreground">{d.comments.toLocaleString()}</td>}
+                            {visibleColumns.shares && <td className="text-right px-4 py-3 font-mono text-foreground">{d.shares.toLocaleString()}</td>}
+                            {visibleColumns.engagements && <td className="text-right px-4 py-3 font-mono font-bold text-foreground">{d.engagements.toLocaleString()}</td>}
+                            {visibleColumns.engagementRate && <td className="text-right px-4 py-3 font-mono text-foreground">{d.engagementRate.toFixed(2)}%</td>}
+                            {visibleColumns.vodViews && <td className="text-right px-4 py-3 font-mono text-foreground">{d.vodViews ? d.vodViews.toLocaleString() : '—'}</td>}
+                            {visibleColumns.avgCcv && <td className="text-right px-4 py-3 font-mono text-foreground">{d.avgCcv ? d.avgCcv.toLocaleString() : '—'}</td>}
+                            {visibleColumns.maxCcv && <td className="text-right px-4 py-3 font-mono text-foreground">{d.maxCcv ? d.maxCcv.toLocaleString() : '—'}</td>}
                             {visibleColumns.internalCost && (
                               <td className="text-right px-4 py-3 font-mono text-foreground">
-                                {presentationMode ? <span className="text-muted-foreground blur-sm select-none">$••••</span> : `$${internalCost.toLocaleString()}`}
+                                {presentationMode ? <span className="text-muted-foreground blur-sm select-none">$••••</span> : `$${d.internalCost.toLocaleString()}`}
                               </td>
                             )}
                             {visibleColumns.clientCost && (
                               <td className="text-right px-4 py-3 font-mono text-foreground">
-                                {presentationMode ? <span className="text-muted-foreground blur-sm select-none">$••••</span> : `$${clientCost.toLocaleString()}`}
+                                {presentationMode ? <span className="text-muted-foreground blur-sm select-none">$••••</span> : `$${d.clientCost.toLocaleString()}`}
                               </td>
                             )}
                             {visibleColumns.profitMargin && (
                               <td className="text-right px-4 py-3 font-mono font-semibold text-emerald-600">
-                                {presentationMode ? <span className="text-muted-foreground blur-sm select-none">$••••</span> : `$${profit.toLocaleString()}`}
+                                {presentationMode ? <span className="text-muted-foreground blur-sm select-none">••%</span> : `${d.profitMargin.toFixed(1)}%`}
                               </td>
                             )}
                             {visibleColumns.internalCpm && (
                               <td className="text-right px-4 py-3 font-mono text-foreground">
-                                {presentationMode ? <span className="text-muted-foreground blur-sm select-none">$••</span> : `$${internalCpm}`}
+                                {presentationMode ? <span className="text-muted-foreground blur-sm select-none">$••</span> : `$${d.internalCpm.toFixed(2)}`}
                               </td>
                             )}
-                            {visibleColumns.externalCpm && <td className="text-right px-4 py-3 font-mono text-foreground">${externalCpm}</td>}
+                            {visibleColumns.externalCpm && <td className="text-right px-4 py-3 font-mono text-foreground">${d.externalCpm.toFixed(2)}</td>}
                           </tr>
                         )
                       })}
@@ -584,42 +814,20 @@ export default function CampaignDetailPage({ params }: { params: { id: string } 
           {/* ANALYTICS TAB */}
           {activeTab === 'analytics' && (
             <div className="space-y-6">
-              {/* Performance Over Time Chart */}
-              <div className="bg-card border border-border rounded-xl p-5">
-                <h2 className="text-sm font-semibold text-foreground mb-5">Performance Over Time</h2>
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={chartData} margin={{ top: 10, right: 20, left: 0, bottom: 20 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false} />
-                    <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#6B7280' }} />
-                    <YAxis tick={{ fontSize: 10, fill: '#6B7280' }} />
-                    <Tooltip
-                      contentStyle={{ backgroundColor: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: '6px' }}
-                      labelStyle={{ color: '#1F2937', fontSize: '11px' }}
-                      formatter={(value) => `${(value as number / 1000000).toFixed(1)}M`}
-                    />
-                    <Legend wrapperStyle={{ fontSize: '11px' }} />
-                    <Bar dataKey="YouTube" fill="#FF0000" stackId="platform" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="Twitch" fill="#9146FF" stackId="platform" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="TikTok" fill="#000000" stackId="platform" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="Instagram" fill="#E1306C" stackId="platform" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-
-              {/* Pie Charts Grid - 2x2 */}
-              <div className="grid grid-cols-2 gap-4">
+              {/* Top Row: 3 Cards */}
+              <div className="grid grid-cols-3 gap-4">
                 {/* Top Creators */}
                 <div className="bg-card border border-border rounded-xl p-5">
                   <h2 className="text-sm font-semibold text-foreground mb-4">Top Creators</h2>
                   <div className="flex items-center gap-4">
-                    <ResponsiveContainer width="50%" height={180}>
+                    <ResponsiveContainer width="45%" height={160}>
                       <PieChart>
                         <Pie
                           data={topCreatorsData}
                           cx="50%"
                           cy="50%"
-                          innerRadius={45}
-                          outerRadius={70}
+                          innerRadius={40}
+                          outerRadius={60}
                           dataKey="value"
                           paddingAngle={2}
                         >
@@ -630,7 +838,7 @@ export default function CampaignDetailPage({ params }: { params: { id: string } 
                         <Tooltip formatter={(value) => `${(value as number / 1000).toFixed(0)}K views`} />
                       </PieChart>
                     </ResponsiveContainer>
-                    <div className="flex-1 space-y-2">
+                    <div className="flex-1 space-y-1.5">
                       {topCreatorsData.map((item, idx) => (
                         <div key={idx} className="flex items-center justify-between text-xs">
                           <div className="flex items-center gap-2">
@@ -648,14 +856,14 @@ export default function CampaignDetailPage({ params }: { params: { id: string } 
                 <div className="bg-card border border-border rounded-xl p-5">
                   <h2 className="text-sm font-semibold text-foreground mb-4">Views Breakdown</h2>
                   <div className="flex items-center gap-4">
-                    <ResponsiveContainer width="50%" height={180}>
+                    <ResponsiveContainer width="45%" height={160}>
                       <PieChart>
                         <Pie
                           data={viewsBreakdownData}
                           cx="50%"
                           cy="50%"
-                          innerRadius={45}
-                          outerRadius={70}
+                          innerRadius={40}
+                          outerRadius={60}
                           dataKey="value"
                           paddingAngle={2}
                         >
@@ -666,7 +874,7 @@ export default function CampaignDetailPage({ params }: { params: { id: string } 
                         <Tooltip formatter={(value) => `${(value as number / 1000000).toFixed(2)}M views`} />
                       </PieChart>
                     </ResponsiveContainer>
-                    <div className="flex-1 space-y-2">
+                    <div className="flex-1 space-y-1.5">
                       {viewsBreakdownData.map((item, idx) => (
                         <div key={idx} className="flex items-center justify-between text-xs">
                           <div className="flex items-center gap-2">
@@ -680,54 +888,18 @@ export default function CampaignDetailPage({ params }: { params: { id: string } 
                   </div>
                 </div>
 
-                {/* Top Performing Posts */}
-                <div className="bg-card border border-border rounded-xl p-5">
-                  <h2 className="text-sm font-semibold text-foreground mb-4">Top Performing Posts</h2>
-                  <div className="flex items-center gap-4">
-                    <ResponsiveContainer width="50%" height={180}>
-                      <PieChart>
-                        <Pie
-                          data={topPostsData}
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={45}
-                          outerRadius={70}
-                          dataKey="value"
-                          paddingAngle={2}
-                        >
-                          {topPostsData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
-                          ))}
-                        </Pie>
-                        <Tooltip formatter={(value) => `${(value as number / 1000).toFixed(0)}K views`} />
-                      </PieChart>
-                    </ResponsiveContainer>
-                    <div className="flex-1 space-y-2">
-                      {topPostsData.map((item, idx) => (
-                        <div key={idx} className="flex items-center justify-between text-xs">
-                          <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }} />
-                            <span className="text-foreground truncate max-w-24">{item.name}</span>
-                          </div>
-                          <span className="font-mono text-muted-foreground">{(item.value / 1000).toFixed(0)}K</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
                 {/* Cost / CPM Breakdown */}
                 <div className={cn("bg-card border border-border rounded-xl p-5", presentationMode && "opacity-40")}>
-                  <h2 className="text-sm font-semibold text-foreground mb-4">Cost Breakdown by Platform</h2>
+                  <h2 className="text-sm font-semibold text-foreground mb-4">Cost Breakdown</h2>
                   <div className="flex items-center gap-4">
-                    <ResponsiveContainer width="50%" height={180}>
+                    <ResponsiveContainer width="45%" height={160}>
                       <PieChart>
                         <Pie
                           data={costBreakdownData}
                           cx="50%"
                           cy="50%"
-                          innerRadius={45}
-                          outerRadius={70}
+                          innerRadius={40}
+                          outerRadius={60}
                           dataKey="value"
                           paddingAngle={2}
                         >
@@ -738,7 +910,7 @@ export default function CampaignDetailPage({ params }: { params: { id: string } 
                         <Tooltip formatter={(value) => presentationMode ? '••••' : `$${(value as number).toLocaleString()}`} />
                       </PieChart>
                     </ResponsiveContainer>
-                    <div className="flex-1 space-y-2">
+                    <div className="flex-1 space-y-1.5">
                       {costBreakdownData.map((item, idx) => (
                         <div key={idx} className="flex items-center justify-between text-xs">
                           <div className="flex items-center gap-2">
@@ -754,6 +926,56 @@ export default function CampaignDetailPage({ params }: { params: { id: string } 
                   </div>
                 </div>
               </div>
+
+              {/* Top Performing Posts - Line Items */}
+              <div className="bg-card border border-border rounded-xl p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-sm font-semibold text-foreground">Top Performing Posts</h2>
+                  <Trophy size={16} className="text-primary" />
+                </div>
+                <div className="space-y-3">
+                  {topPostsData.map((post, idx) => (
+                    <div key={idx} className="flex items-center gap-4 p-3 rounded-lg bg-secondary/30 hover:bg-secondary/50 transition-colors">
+                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                        <span className="text-primary text-xs font-bold">#{post.rank}</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-medium text-foreground">{post.creator}</p>
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-secondary text-muted-foreground">{post.platform}</span>
+                        </div>
+                        <p className="text-xs text-muted-foreground">{post.type}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-bold font-mono text-foreground">{(post.views / 1000).toFixed(0)}K</p>
+                        <p className="text-[10px] text-muted-foreground">{post.er}% ER</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Performance Over Time Chart - Moved to bottom */}
+              <div className="bg-card border border-border rounded-xl p-5">
+                <h2 className="text-sm font-semibold text-foreground mb-5">Performance Over Time</h2>
+                <ResponsiveContainer width="100%" height={280}>
+                  <BarChart data={chartData} margin={{ top: 10, right: 20, left: 0, bottom: 20 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false} />
+                    <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#6B7280' }} />
+                    <YAxis tick={{ fontSize: 10, fill: '#6B7280' }} />
+                    <Tooltip
+                      contentStyle={{ backgroundColor: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: '6px' }}
+                      labelStyle={{ color: '#1F2937', fontSize: '11px' }}
+                      formatter={(value) => `${(value as number / 1000000).toFixed(1)}M`}
+                    />
+                    <Legend wrapperStyle={{ fontSize: '11px' }} />
+                    <Bar dataKey="YouTube" fill="#FF0000" stackId="platform" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="Twitch" fill="#9146FF" stackId="platform" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="TikTok" fill="#000000" stackId="platform" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="Instagram" fill="#E1306C" stackId="platform" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
             </div>
           )}
         </div>
@@ -764,12 +986,23 @@ export default function CampaignDetailPage({ params }: { params: { id: string } 
         <DialogContent className="bg-card border-border max-w-md">
           <DialogHeader>
             <DialogTitle className="text-foreground">Add New Deliverable</DialogTitle>
-            <DialogDescription className="text-muted-foreground">
-              Create a new deliverable for this campaign.
+            <DialogDescription className="text-muted-foreground text-xs">
+              Add a live or scheduled deliverable. Creator and platform will be auto-detected from URL.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
+            {/* Status Toggle */}
+            <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary/40 border border-border">
+              <div className="flex items-center gap-2">
+                <Checkbox id="is-placeholder" />
+                <label htmlFor="is-placeholder" className="text-xs font-medium text-foreground cursor-pointer">
+                  Scheduled / Placeholder
+                </label>
+              </div>
+              <span className="text-[10px] text-muted-foreground">Content not yet live</span>
+            </div>
+
             <div>
               <label className="text-xs font-medium text-foreground mb-2 block">Deliverable Type</label>
               <Select>
@@ -791,32 +1024,20 @@ export default function CampaignDetailPage({ params }: { params: { id: string } 
             <div>
               <label className="text-xs font-medium text-foreground mb-2 block">URL</label>
               <Input
-                placeholder="https://youtube.com/watch?v=..."
+                placeholder="https://youtube.com/watch?v=... (or leave empty for placeholder)"
                 className="bg-secondary/60 border-border text-xs placeholder:text-muted-foreground/60"
               />
+              <p className="text-[10px] text-muted-foreground mt-1">
+                Creator name and platform will be auto-detected from the URL
+              </p>
             </div>
 
             <div>
-              <label className="text-xs font-medium text-foreground mb-2 block">Creator Name</label>
+              <label className="text-xs font-medium text-foreground mb-2 block">Scheduled Go-Live Date</label>
               <Input
-                placeholder="Enter creator name"
-                className="bg-secondary/60 border-border text-xs placeholder:text-muted-foreground/60"
+                type="date"
+                className="bg-secondary/60 border-border text-xs"
               />
-            </div>
-
-            <div>
-              <label className="text-xs font-medium text-foreground mb-2 block">Platform</label>
-              <Select>
-                <SelectTrigger className="bg-secondary/60 border-border text-xs">
-                  <SelectValue placeholder="Select platform" />
-                </SelectTrigger>
-                <SelectContent className="bg-card border-border">
-                  <SelectItem value="youtube">YouTube</SelectItem>
-                  <SelectItem value="twitch">Twitch</SelectItem>
-                  <SelectItem value="tiktok">TikTok</SelectItem>
-                  <SelectItem value="instagram">Instagram</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
@@ -829,7 +1050,7 @@ export default function CampaignDetailPage({ params }: { params: { id: string } 
                 />
               </div>
               <div>
-                <label className="text-xs font-medium text-foreground mb-2 block">External Cost</label>
+                <label className="text-xs font-medium text-foreground mb-2 block">Client Cost</label>
                 <Input
                   type="number"
                   placeholder="$0.00"
