@@ -18,34 +18,34 @@ import {
 
 const features = [
   {
-    icon: BarChart3,
-    title: 'Campaign Analytics',
-    description: 'Real-time performance tracking across YouTube, TikTok, Twitch, and Instagram with automated reporting.',
-  },
-  {
-    icon: Users,
-    title: 'Influencer Prospecting',
-    description: 'Build and vet creator lists with automated stats extraction and CPM calculations.',
-  },
-  {
     icon: Zap,
-    title: 'Deliverable Tracking',
-    description: 'Manage every piece of content with progress bars, target views, and live metrics.',
+    title: 'Automated Deliverable Tracking',
+    description: 'Track every influencer post in real-time across all platforms with live metrics and performance data.',
+  },
+  {
+    icon: BarChart3,
+    title: 'Unified Social Metrics',
+    description: 'YouTube, TikTok, Twitch, Instagram, and X all in one dashboard — no platform switching.',
   },
   {
     icon: Shield,
-    title: 'Presentation Mode',
-    description: 'One-click client-safe view that hides internal pricing and agency margins instantly.',
+    title: 'Agency Margin Protection',
+    description: 'One-click External-Facing Mode hides internal pricing and ensures margins stay private on client calls.',
   },
   {
     icon: TrendingUp,
     title: 'Conservative Forecasting',
-    description: 'Built-in 80% multiplier for realistic performance projections clients can trust.',
+    description: 'Built-in 80% multiplier for realistic performance projections your clients will trust.',
+  },
+  {
+    icon: Users,
+    title: 'Master Creator Lists',
+    description: 'Build, organize, and vet influencer lists with automated stats extraction and CPM calculations.',
   },
   {
     icon: Globe,
-    title: 'Multi-Platform Support',
-    description: 'YouTube, TikTok, Twitch, Instagram, and X — all unified in a single dashboard.',
+    title: 'Campaign Analytics Suite',
+    description: 'Views over time, platform breakdowns, content type analysis, and top performers — all integrated.',
   },
 ]
 
@@ -83,16 +83,16 @@ export default function LandingPage() {
           <div className="text-center max-w-4xl mx-auto">
             <Badge className="mb-6 bg-primary/10 text-primary border-primary/20 hover:bg-primary/15">
               <Sparkles size={12} className="mr-1.5" />
-              Now with AI-powered creator discovery
+              Professional Campaign Management for Agencies
             </Badge>
             
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-foreground text-balance">
-              Turn Data into{' '}
-              <span className="text-primary">Agency ROI</span>
+              Vantage —{' '}
+              <span className="text-primary">Campaign Mastery</span>
             </h1>
             
             <p className="mt-6 text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto text-pretty">
-              The all-in-one platform for influencer marketing agencies. Manage campaigns, track deliverables, and close deals — all while keeping your margins private.
+              Automated deliverable tracking, unified social metrics, and margin protection. The only platform built for agency profitability.
             </p>
 
             <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -249,20 +249,22 @@ export default function LandingPage() {
           <div className="relative overflow-hidden rounded-2xl bg-primary/10 border border-primary/20 p-8 sm:p-12 text-center">
             <div className="relative z-10">
               <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-4">
-                Ready to transform your agency?
+                Ready to take control of your campaigns?
               </h2>
               <p className="text-muted-foreground mb-8 max-w-xl mx-auto">
-                Join 340+ agencies already using CherryPick to manage campaigns, track ROI, and close bigger deals.
+                Join agencies using Vantage to manage campaigns, track ROI, and protect margins on every deal.
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                <Link href="/">
+                <Link href="/signup">
                   <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 gap-2">
-                    Start Free Trial <ArrowRight size={16} />
+                    Get Started <ArrowRight size={16} />
                   </Button>
                 </Link>
-                <Button variant="outline" size="lg" className="border-border">
-                  Schedule a Demo
-                </Button>
+                <Link href="/login">
+                  <Button variant="outline" size="lg" className="border-border">
+                    Sign In
+                  </Button>
+                </Link>
               </div>
               <div className="mt-6 flex items-center justify-center gap-6 text-sm text-muted-foreground">
                 {['No credit card required', '14-day free trial', 'Cancel anytime'].map(item => (
@@ -283,9 +285,9 @@ export default function LandingPage() {
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2">
               <div className="w-6 h-6 rounded bg-primary flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-xs">CP</span>
+                <span className="text-primary-foreground font-bold text-xs">V</span>
               </div>
-              <span className="font-semibold text-foreground">CherryPick Talent</span>
+              <span className="font-semibold text-foreground">Vantage</span>
             </div>
             <div className="flex items-center gap-6 text-sm text-muted-foreground">
               <Link href="#" className="hover:text-foreground transition-colors">Privacy</Link>
@@ -293,7 +295,7 @@ export default function LandingPage() {
               <Link href="#" className="hover:text-foreground transition-colors">Contact</Link>
             </div>
             <div className="text-sm text-muted-foreground">
-              2026 CherryPick Talent. All rights reserved.
+              2026 Vantage. All rights reserved.
             </div>
           </div>
         </div>

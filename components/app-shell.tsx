@@ -50,12 +50,10 @@ import { Switch } from '@/components/ui/switch'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 
 const navItems = [
-  { href: '/landing', label: 'Landing Page', icon: Home },
-  { href: '/', label: 'Overview', icon: LayoutDashboard },
+  { href: '/', label: 'Agency Dashboard', icon: LayoutDashboard },
   { href: '/campaigns', label: 'Campaigns', icon: Megaphone },
-  { href: '/campaign/epic-games-q1', label: 'Campaign Dashboard', icon: Zap },
   { href: '/prospecting', label: 'List Builder', icon: List },
-  { href: '/clients', label: 'Clients', icon: Users },
+  { href: '/settings', label: 'Settings', icon: Settings },
 ]
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -92,14 +90,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           )}
         >
           {/* Logo */}
-          <div className="flex items-center gap-2.5 px-3 h-12 border-b border-border">
-            <div className="w-7 h-7 rounded bg-primary flex items-center justify-center shrink-0">
-              <span className="text-primary-foreground font-bold text-xs">CP</span>
+          <Link href="/landing">
+            <div className="flex items-center gap-2.5 px-3 h-12 border-b border-border hover:opacity-80 transition-opacity cursor-pointer">
+              <div className="w-7 h-7 rounded bg-primary flex items-center justify-center shrink-0">
+                <span className="text-primary-foreground font-bold text-xs">V</span>
+              </div>
+              {sidebarOpen && (
+                <span className="font-semibold text-sm text-foreground truncate">Vantage</span>
+              )}
             </div>
-            {sidebarOpen && (
-              <span className="font-semibold text-sm text-foreground truncate">CherryPick Talent</span>
-            )}
-          </div>
+          </Link>
 
           {/* Nav */}
           <nav className="flex-1 py-3 px-2 space-y-0.5 overflow-y-auto">
@@ -131,12 +131,19 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
           {/* Bottom */}
           {sidebarOpen && (
-            <div className="p-3 border-t border-border">
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
-                  <span className="text-primary text-[10px] font-bold">R</span>
+            <div className="p-3 border-t border-border space-y-1.5">
+              <div className="space-y-1">
+                <div className="text-[10px] text-muted-foreground font-medium">User</div>
+                <div className="flex items-center gap-2">
+                  <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
+                    <span className="text-primary text-[9px] font-bold">R</span>
+                  </div>
+                  <span className="text-xs text-foreground truncate font-medium">Robert</span>
                 </div>
-                <span className="truncate">robert@cherrypicktalent.com</span>
+              </div>
+              <div className="space-y-1">
+                <div className="text-[10px] text-muted-foreground font-medium">Agency</div>
+                <div className="text-xs text-foreground truncate">Cherry Pick Talent</div>
               </div>
             </div>
           )}
