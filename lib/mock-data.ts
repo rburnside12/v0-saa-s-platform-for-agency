@@ -256,6 +256,7 @@ export const MOCK_INFLUENCERS = [
 // Per-campaign analytics data keyed by campaign ID
 export const MOCK_CAMPAIGN_ANALYTICS: Record<string, {
   viewsOverTime: Array<{ date: string; views: number; target: number }>;
+  stackedByPlatform?: Array<Record<string, number | string>>;
   byPlatform: Array<{ platform: string; views: number; color: string }>;
   byContentType: Array<{ type: string; views: number; color: string }>;
   topPerformers: Array<{ creator: string; platform: string; views: number; er: number; ccv?: number; badge: string }>;
@@ -270,6 +271,16 @@ export const MOCK_CAMPAIGN_ANALYTICS: Record<string, {
       { date: 'Feb 19', views: 28100000, target: 25000000 },
       { date: 'Feb 26', views: 36800000, target: 33000000 },
       { date: 'Mar 5', views: 48200000, target: 42000000 },
+    ],
+    stackedByPlatform: [
+      { date: 'Jan 15', YouTube: 1200000, Twitch: 600000, TikTok: 300000 },
+      { date: 'Jan 22', YouTube: 3100000, Twitch: 1500000, TikTok: 800000 },
+      { date: 'Jan 29', YouTube: 5600000, Twitch: 2800000, TikTok: 1400000 },
+      { date: 'Feb 5', YouTube: 8100000, Twitch: 4100000, TikTok: 2000000 },
+      { date: 'Feb 12', YouTube: 11800000, Twitch: 5900000, TikTok: 2800000 },
+      { date: 'Feb 19', YouTube: 16200000, Twitch: 8100000, TikTok: 3800000 },
+      { date: 'Feb 26', YouTube: 21200000, Twitch: 10600000, TikTok: 5000000 },
+      { date: 'Mar 5', YouTube: 27600000, Twitch: 13800000, TikTok: 6800000 },
     ],
     byPlatform: [
       { platform: 'YouTube', views: 22800000, color: '#FF0000' },
