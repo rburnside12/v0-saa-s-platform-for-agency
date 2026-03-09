@@ -24,6 +24,7 @@ import {
   Download,
   FileText,
   Eye,
+  ToggleLeft,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -224,6 +225,9 @@ function ListDetailView({ listId, onBack }: { listId: string; onBack: () => void
   const [showShareDialog, setShowShareDialog] = useState(false)
   const [copied, setCopied] = useState(false)
   const [search, setSearch] = useState('')
+  const [autoExcludeOutliers, setAutoExcludeOutliers] = useState(false)
+  const [showCopyForCanva, setShowCopyForCanva] = useState(false)
+  const [canvaCopied, setCanvaCopied] = useState(false)
 
   const filtered = influencers.filter(i =>
     i.handle.toLowerCase().includes(search.toLowerCase()) ||
@@ -266,10 +270,62 @@ function ListDetailView({ listId, onBack }: { listId: string; onBack: () => void
     setInfluencers(prev => prev.filter(i => i.id !== id))
   }
 
+  // Calculate outliers (top/bottom 5% by performance)
+  const calculateOutliers = (influencers: Influencer[]) => {
+    const performances = influencers.map(i => i.platform === 'Twitch' ? (i.twitch?.avgCCV ?? 0) : i.avg30d).sort((a, b) => a - b)
+    const lowThreshold = performances[Math.floor(performances.length * 0.05)] || 0
+    const highThreshold = performances[Math.floor(performances.length * 0.95)] || Infinity
+    
+    return influencers.map(i => {
+      const perf = i.platform === 'Twitch' ? (i.twitch?.avgCCV ?? 0) : i.avg30d
+      return perf < lowThreshold || perf > highThreshold
+    })
+  }
+
+  // Auto-exclude outliers effect
+  const applyAutoOutliers = () => {
+    if (!autoExcludeOutliers) return
+    const outlierFlags = calculateOutliers(influencers)
+    setInfluencers(prev => prev.map((inf, idx) => ({
+      ...inf,
+      excludeOutlier: outlierFlags[idx]
+    })))
+  }
+
   const totalSpend = nonOutlierInfluencers.reduce((a, i) => a + i.anticipatedSpend, 0)
   const totalViews = nonOutlierInfluencers.reduce((a, i) => a + i.anticipatedViews, 0)
   const estimatedCPM = totalViews > 0 ? ((totalSpend / totalViews) * 1000).toFixed(2) : '—'
   const outlierCount = influencers.filter(i => i.excludeOutlier).length
+
+  // Canva export text format
+  const generateCanvaText = () => {
+    let text = `${list?.name || 'Influencer List'}\n`
+    text += `${list?.description || ''}\n\n`
+    text += `Total Creators: ${nonOutlierInfluencers.length}\n`
+    text += `Estimated CPM: $${estimatedCPM}\n\n`
+    text += `CREATORS:\n`
+    text += '─'.repeat(40) + '\n'
+    
+    nonOutlierInfluencers.forEach(inf => {
+      text += `\n${inf.handle} (${inf.platform})\n`
+      text += `${inf.name}\n`
+      if (inf.platform === 'Twitch') {
+        text += `Avg CCV: ${inf.twitch?.avgCCV?.toLocaleString() ?? 'N/A'}\n`
+      } else {
+        text += `30D Avg Views: ${inf.avg30d >= 1000000 ? `${(inf.avg30d / 1000000).toFixed(1)}M` : `${(inf.avg30d / 1000).toFixed(0)}K`}\n`
+      }
+      text += `ER: ${inf.er}%\n`
+      text += `Tags: ${inf.tags.join(', ')}\n`
+    })
+    
+    return text
+  }
+
+  const handleCopyCanva = () => {
+    navigator.clipboard.writeText(generateCanvaText())
+    setCanvaCopied(true)
+    setTimeout(() => setCanvaCopied(false), 2000)
+  }
 
   function handleCopyLink() {
     navigator.clipboard.writeText(`https://app.cherrypicktalent.com/lists/share/${listId}`)
@@ -299,7 +355,7 @@ function ListDetailView({ listId, onBack }: { listId: string; onBack: () => void
                 <Download size={12} /> Export
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="bg-card border-border w-52">
+            <DropdownMenuContent className="bg-card border-border w-56">
               <DropdownMenuItem className="text-xs gap-2">
                 <FileSpreadsheet size={12} /> Export to Google Sheets
               </DropdownMenuItem>
@@ -310,6 +366,11 @@ function ListDetailView({ listId, onBack }: { listId: string; onBack: () => void
               <DropdownMenuItem className="text-xs gap-2">
                 <Eye size={12} /> Download External PDF
                 <span className="text-muted-foreground ml-auto text-[10px]">Pricing masked</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator className="bg-border" />
+              <DropdownMenuItem className="text-xs gap-2" onClick={handleCopyCanva}>
+                <Copy size={12} /> {canvaCopied ? 'Copied!' : 'Copy for Canva'}
+                <span className="text-muted-foreground ml-auto text-[10px]">Text format</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -324,7 +385,7 @@ function ListDetailView({ listId, onBack }: { listId: string; onBack: () => void
       </div>
 
       {/* Summary strip */}
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-5 gap-3">
         {[
           { label: 'Total Creators', value: nonOutlierInfluencers.length.toString(), icon: Users },
           { label: 'Anticipated Spend', value: `$${(totalSpend / 1000).toFixed(0)}K`, icon: TrendingUp },
@@ -341,6 +402,40 @@ function ListDetailView({ listId, onBack }: { listId: string; onBack: () => void
             </div>
           </div>
         ))}
+        
+        {/* Auto-Exclude Outliers Toggle */}
+        <div className="bg-card border border-border rounded-lg px-4 py-3">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex items-center justify-between gap-2 h-full">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded bg-amber-500/10 flex items-center justify-center shrink-0">
+                    <Info size={13} className="text-amber-500" />
+                  </div>
+                  <div>
+                    <div className="text-[10px] text-muted-foreground">Auto-Exclude</div>
+                    <div className="text-xs font-medium text-foreground">Top/Bottom 5%</div>
+                  </div>
+                </div>
+                <Switch
+                  checked={autoExcludeOutliers}
+                  onCheckedChange={(checked) => {
+                    setAutoExcludeOutliers(checked)
+                    if (checked) {
+                      applyAutoOutliers()
+                    } else {
+                      setInfluencers(prev => prev.map(inf => ({ ...inf, excludeOutlier: false })))
+                    }
+                  }}
+                  className="data-[state=checked]:bg-amber-500"
+                />
+              </div>
+            </TooltipTrigger>
+            <TooltipContent className="text-xs bg-card border-border max-w-64">
+              Automatically exclude creators in the top/bottom 5% of performance to get more conservative averages.
+            </TooltipContent>
+          </Tooltip>
+        </div>
       </div>
 
       {/* Add link input */}

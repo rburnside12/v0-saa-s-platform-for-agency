@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
@@ -33,9 +33,21 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
+import {
+  CommandDialog,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+  CommandSeparator,
+} from '@/components/ui/command'
+import { useRouter } from 'next/navigation'
+import { MOCK_CAMPAIGNS, MOCK_CREATORS } from '@/lib/mock-data'
 
 const navItems = [
   { href: '/', label: 'Overview', icon: LayoutDashboard },
+  { href: '/creators', label: 'Creator Library', icon: User },
   { href: '/campaigns', label: 'Campaigns', icon: Megaphone },
   { href: '/prospecting', label: 'List Builder', icon: List },
   { href: '/anomalies', label: 'Anomalies', icon: AlertCircle },
@@ -49,9 +61,28 @@ const pinnedItems = [
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
+  const router = useRouter()
   const { presentationMode, setPresentationMode } = usePresentationMode()
   const { theme, toggleTheme } = useTheme()
   const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [commandOpen, setCommandOpen] = useState(false)
+
+  // Command-K keyboard shortcut
+  useEffect(() => {
+    const down = (e: KeyboardEvent) => {
+      if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault()
+        setCommandOpen((open) => !open)
+      }
+    }
+    document.addEventListener('keydown', down)
+    return () => document.removeEventListener('keydown', down)
+  }, [])
+
+  const runCommand = useCallback((command: () => void) => {
+    setCommandOpen(false)
+    command()
+  }, [])
 
   return (
     <div className="flex h-screen bg-background text-foreground">
@@ -93,17 +124,19 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           )}
         </div>
 
-        {/* Search */}
+        {/* Search - Command-K Trigger */}
         {sidebarOpen && (
           <div className="px-2 py-2 border-b border-border">
-            <div className="relative">
-              <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
-              <input
-                type="text"
-                placeholder="Search campaigns..."
-                className="w-full h-8 pl-7 pr-2.5 rounded-md bg-secondary/60 border border-border/50 text-xs placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-primary"
-              />
-            </div>
+            <button
+              onClick={() => setCommandOpen(true)}
+              className="w-full h-8 px-2.5 rounded-md bg-secondary/60 border border-border/50 text-xs text-muted-foreground/60 flex items-center gap-2 hover:bg-secondary/80 hover:border-border transition-colors"
+            >
+              <Search size={12} />
+              <span className="flex-1 text-left">Search...</span>
+              <kbd className="hidden sm:inline-flex h-5 select-none items-center gap-1 rounded border border-border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+                <span className="text-xs">⌘</span>K
+              </kbd>
+            </button>
           </div>
         )}
 
@@ -227,6 +260,67 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           {children}
         </main>
       </div>
+
+      {/* Command-K Search Dialog */}
+      <CommandDialog open={commandOpen} onOpenChange={setCommandOpen}>
+        <CommandInput placeholder="Search creators, campaigns, or pages..." />
+        <CommandList>
+          <CommandEmpty>No results found.</CommandEmpty>
+          
+          <CommandGroup heading="Pages">
+            {navItems.map(({ href, label, icon: Icon }) => (
+              <CommandItem
+                key={href}
+                onSelect={() => runCommand(() => router.push(href))}
+                className="gap-2"
+              >
+                <Icon size={14} className="text-muted-foreground" />
+                <span>{label}</span>
+              </CommandItem>
+            ))}
+          </CommandGroup>
+
+          <CommandSeparator />
+
+          <CommandGroup heading="Creators">
+            {MOCK_CREATORS.slice(0, 5).map((creator) => (
+              <CommandItem
+                key={creator.id}
+                onSelect={() => runCommand(() => router.push(`/creators/${creator.id}`))}
+                className="gap-2"
+              >
+                <div className="w-5 h-5 rounded-full bg-primary/15 flex items-center justify-center shrink-0">
+                  <span className="text-primary text-[8px] font-bold">{creator.avatar}</span>
+                </div>
+                <span className="flex-1">{creator.handle}</span>
+                <span className="text-[10px] text-muted-foreground">{creator.platform}</span>
+              </CommandItem>
+            ))}
+          </CommandGroup>
+
+          <CommandSeparator />
+
+          <CommandGroup heading="Campaigns">
+            {MOCK_CAMPAIGNS.slice(0, 4).map((campaign) => (
+              <CommandItem
+                key={campaign.id}
+                onSelect={() => runCommand(() => router.push(`/campaign/${campaign.id}`))}
+                className="gap-2"
+              >
+                <Megaphone size={14} className="text-muted-foreground" />
+                <span className="flex-1 truncate">{campaign.name}</span>
+                <span className={`text-[10px] px-1.5 py-0.5 rounded ${
+                  campaign.status === 'active' ? 'bg-emerald-500/15 text-emerald-400' :
+                  campaign.status === 'completed' ? 'bg-blue-500/15 text-blue-400' :
+                  'bg-secondary text-muted-foreground'
+                }`}>
+                  {campaign.status}
+                </span>
+              </CommandItem>
+            ))}
+          </CommandGroup>
+        </CommandList>
+      </CommandDialog>
     </div>
   )
 }
