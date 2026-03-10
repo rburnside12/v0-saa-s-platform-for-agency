@@ -1094,30 +1094,7 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ id: s
             </div>
           )}
 
-          {/* Old chart reference removed - replaced above */}
-          {false && (
-            <div className="bg-card border border-border rounded-xl p-5">
-              <h2 className="text-sm font-semibold text-foreground mb-5">Performance Over Time</h2>
-              <ResponsiveContainer width="100%" height={280}>
-                <BarChart data={[]} margin={{ top: 10, right: 20, left: 0, bottom: 20 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false} />
-                    <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#6B7280' }} />
-                    <YAxis tick={{ fontSize: 10, fill: '#6B7280' }} />
-                    <Tooltip
-                      contentStyle={{ backgroundColor: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: '6px' }}
-                      labelStyle={{ color: '#1F2937', fontSize: '11px' }}
-                      formatter={(value) => { const v = value as number; return `${(v / 1000000).toFixed(1)}M` }}
-                    />
-                    <Legend wrapperStyle={{ fontSize: '11px' }} />
-                    <Bar dataKey="YouTube" fill="#FF0000" stackId="platform" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="Twitch" fill="#9146FF" stackId="platform" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="TikTok" fill="#000000" stackId="platform" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="Instagram" fill="#E1306C" stackId="platform" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-          )}
+
 
           {/* REPORT TAB */}
           {activeTab === 'report' && (
