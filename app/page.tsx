@@ -1,161 +1,146 @@
 'use client'
 
-import { useState } from 'react'
-import Link from 'next/link'
+import { use } from 'react'
+import { useRouter } from 'next/navigation'
+import { useEffect } from 'react'
 import { AppShell } from '@/components/app-shell'
-import { MOCK_CAMPAIGNS } from '@/lib/mock-data'
+import { useUserRole } from '@/contexts/user-role'
 import { usePresentationMode } from '@/contexts/presentation-mode'
-import { cn } from '@/lib/utils'
-import { ChevronRight, Lock, TrendingUp, Users, DollarSign, Percent, BarChart3, Plus } from 'lucide-react'
-import { Badge } from '@/components/ui/badge'
+import { MOCK_CAMPAIGNS } from '@/lib/mock-data'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from '@/components/ui/dialog'
+import { Badge } from '@/components/ui/badge'
+import { cn } from '@/lib/utils'
+import { ChevronRight, AlertTriangle, Calendar, CheckCircle2, AlertCircle } from 'lucide-react'
+import Link from 'next/link'
 
-// Mock top clients data
-const TOP_CLIENTS = [
-  { name: 'Epic Games', campaigns: 3, totalSpend: 312000, views: 48200000 },
-  { name: 'Riot Games', campaigns: 2, totalSpend: 195000, views: 31500000 },
-  { name: 'Nike', campaigns: 1, totalSpend: 348500, views: 42800000 },
-  { name: 'AMD', campaigns: 1, totalSpend: 89000, views: 12400000 },
-]
-
-export default function AgencyDashboard() {
+export default function HomePage() {
+  const { role } = useUserRole()
   const { presentationMode } = usePresentationMode()
-  const [showNewCampaignDialog, setShowNewCampaignDialog] = useState(false)
 
-  // Calculate Agency-Wide KPIs (non-rounded, detailed)
-  const totalViews = MOCK_CAMPAIGNS.reduce((a, c) => a + c.totalViews, 0)
-  const totalEngagements = Math.floor(totalViews * 0.054) // 5.4% engagement rate
-  const totalClientSpend = MOCK_CAMPAIGNS.reduce((a, c) => a + c.spent, 0)
-  const avgEngagementRate = 5.42 // fixed for display
-  const avgExternalCpm = 46.18 // fixed for display
+  // SUPER ADMIN: Finance Dashboard
+  if (role === 'super_admin') {
+    const totalSpend = MOCK_CAMPAIGNS.reduce((a, c) => a + c.spent, 0)
+    const totalViews = MOCK_CAMPAIGNS.reduce((a, c) => a + c.totalViews, 0)
+    const avgER = 5.42
 
+    return (
+      <AppShell>
+        <div className="p-6 space-y-6">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">Finance Overview</h1>
+            <p className="text-sm text-muted-foreground mt-1">Agency-wide financial performance</p>
+          </div>
+
+          {/* KPI Cards */}
+          <div className="grid grid-cols-5 gap-4">
+            {[
+              { label: 'Total Client Revenue', value: presentationMode ? '••••' : `$${(totalSpend / 1000).toFixed(0)}K`, color: 'text-foreground' },
+              { label: 'Total Views', value: `${(totalViews / 1000000).toFixed(1)}M`, color: 'text-foreground' },
+              { label: 'Avg Engagement Rate', value: `${avgER}%`, color: 'text-foreground' },
+              { label: 'Avg External CPM', value: presentationMode ? '••••' : '$46.18', color: 'text-foreground' },
+              { label: 'Avg Profit Margin', value: presentationMode ? '••••' : '28%', color: 'text-emerald-400' },
+            ].map((kpi, i) => (
+              <div key={i} className={cn('bg-card border border-border rounded-xl p-5', i === 4 && 'bg-emerald-500/5 border-emerald-500/20')}>
+                <p className="text-xs text-muted-foreground mb-2">{kpi.label}</p>
+                <p className={cn('text-2xl font-bold font-mono', kpi.color)}>{kpi.value}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Active Campaigns Table */}
+          <div className="bg-card border border-border rounded-xl overflow-hidden">
+            <div className="p-4 border-b border-border/50 bg-secondary/30">
+              <h2 className="text-sm font-semibold text-foreground">Active Campaigns</h2>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead className="border-b border-border/50">
+                  <tr>
+                    <th className="text-left p-3 font-medium text-muted-foreground">Campaign</th>
+                    <th className="text-left p-3 font-medium text-muted-foreground">Client</th>
+                    <th className="text-left p-3 font-medium text-muted-foreground">Views</th>
+                    <th className="text-left p-3 font-medium text-muted-foreground">Spend</th>
+                    <th className="text-left p-3 font-medium text-muted-foreground">Margin</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {MOCK_CAMPAIGNS.filter(c => c.status === 'active').map(c => {
+                    const spend = presentationMode ? '••••' : `$${(c.spent / 1000).toFixed(0)}K`
+                    return (
+                      <tr key={c.id} className="border-b border-border/50 hover:bg-secondary/20 transition-colors">
+                        <td className="p-3 text-foreground font-medium">{c.name}</td>
+                        <td className="p-3 text-muted-foreground">{c.client}</td>
+                        <td className="p-3 font-mono">{(c.totalViews / 1000000).toFixed(1)}M</td>
+                        <td className={cn('p-3 font-mono', presentationMode && 'text-muted-foreground')}>{spend}</td>
+                        <td className={cn('p-3 font-mono text-emerald-400', presentationMode && 'text-muted-foreground')}>{presentationMode ? '••••' : `${c.marginPct}%`}</td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </AppShell>
+    )
+  }
+
+  // NON-ADMIN: My Campaigns Home
   return (
     <AppShell>
       <div className="p-6 space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">Agency Overview</h1>
-            <p className="text-sm text-muted-foreground mt-1">High-level performance across all campaigns</p>
-          </div>
-          <Button 
-            onClick={() => setShowNewCampaignDialog(true)}
-            className="bg-primary text-primary-foreground h-8 text-xs gap-1.5"
-          >
-            <Plus size={13} /> New Campaign
-          </Button>
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Good morning, Robert</h1>
+          <p className="text-sm text-muted-foreground mt-1">Here's what's happening across your campaigns today</p>
         </div>
 
-        {/* KPI Bento Row — 5 Cards */}
-        <div className="grid grid-cols-5 gap-4">
+        {/* Quick Stats */}
+        <div className="grid grid-cols-4 gap-4">
           <div className="bg-card border border-border rounded-xl p-5">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-medium text-muted-foreground">Total Views</span>
-              <TrendingUp size={14} className="text-primary" />
-            </div>
-            <p className="text-2xl font-bold text-foreground font-mono">{totalViews.toLocaleString()}</p>
+            <p className="text-xs text-muted-foreground mb-2">My Active Campaigns</p>
+            <p className="text-2xl font-bold">{MOCK_CAMPAIGNS.filter(c => c.status === 'active').length}</p>
           </div>
-
           <div className="bg-card border border-border rounded-xl p-5">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-medium text-muted-foreground">Total Engagements</span>
-              <Users size={14} className="text-primary" />
-            </div>
-            <p className="text-2xl font-bold text-foreground font-mono">{totalEngagements.toLocaleString()}</p>
+            <p className="text-xs text-muted-foreground mb-2">Deliverables Due This Week</p>
+            <p className="text-2xl font-bold">8</p>
           </div>
-
-          <div className={cn("bg-card border border-border rounded-xl p-5", presentationMode && "opacity-40")}>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-medium text-muted-foreground">Total Client Spend</span>
-              {presentationMode ? <Lock size={14} className="text-muted-foreground" /> : <DollarSign size={14} className="text-blue-500" />}
-            </div>
-            <p className="text-2xl font-bold text-foreground font-mono">
-              {presentationMode ? '••••••' : `$${totalClientSpend.toLocaleString()}`}
-            </p>
-          </div>
-
           <div className="bg-card border border-border rounded-xl p-5">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-medium text-muted-foreground">Avg. Engagement Rate</span>
-              <Percent size={14} className="text-primary" />
-            </div>
-            <p className="text-2xl font-bold text-foreground font-mono">{avgEngagementRate}%</p>
+            <p className="text-xs text-muted-foreground mb-2">Pending Approvals</p>
+            <p className="text-2xl font-bold">3</p>
           </div>
-
-          <div className="bg-card border border-border rounded-xl p-5">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-medium text-muted-foreground">Avg. External CPM</span>
-              <BarChart3 size={14} className="text-primary" />
-            </div>
-            <p className="text-2xl font-bold text-foreground font-mono">${avgExternalCpm}</p>
+          <div className="bg-amber-500/5 border border-amber-500/20 rounded-xl p-5">
+            <p className="text-xs text-muted-foreground mb-2">Anomalies Flagged</p>
+            <p className="text-2xl font-bold text-amber-400">2</p>
           </div>
         </div>
 
-        {/* Active Campaigns Table */}
+        {/* My Active Campaigns */}
         <div className="bg-card border border-border rounded-xl overflow-hidden">
-          <div className="px-6 py-4 border-b border-border/50">
-            <h3 className="text-sm font-semibold text-foreground">Active Campaigns</h3>
+          <div className="p-4 border-b border-border/50 bg-secondary/30 flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-foreground">My Active Campaigns</h2>
+            <Link href="/campaigns">
+              <Button variant="outline" size="sm" className="h-7 text-xs gap-1">
+                View All <ChevronRight size={12} />
+              </Button>
+            </Link>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
-              <thead>
-                <tr className="border-b border-border/50 bg-secondary/30">
-                  <th className="text-left px-6 py-3 text-muted-foreground font-medium">Campaign</th>
-                  <th className="text-left px-6 py-3 text-muted-foreground font-medium">Client</th>
-                  <th className="text-left px-6 py-3 text-muted-foreground font-medium">Status</th>
-                  <th className="text-right px-6 py-3 text-muted-foreground font-medium">Views</th>
-                  <th className="text-right px-6 py-3 text-muted-foreground font-medium">Deliverables</th>
-                  {!presentationMode && <th className="text-right px-6 py-3 text-muted-foreground font-medium">Client Spend</th>}
-                  <th className="text-right px-6 py-3 text-muted-foreground font-medium"></th>
+              <thead className="border-b border-border/50">
+                <tr>
+                  <th className="text-left p-3 font-medium text-muted-foreground">Campaign</th>
+                  <th className="text-left p-3 font-medium text-muted-foreground">Client</th>
+                  <th className="text-left p-3 font-medium text-muted-foreground">Views</th>
+                  <th className="text-left p-3 font-medium text-muted-foreground">Deliverables</th>
                 </tr>
               </thead>
               <tbody>
-                {MOCK_CAMPAIGNS.map((campaign) => (
-                  <tr key={campaign.id} className="border-b border-border/50 hover:bg-secondary/40 transition-colors">
-                    <td className="px-6 py-4">
-                      <Link href={`/campaign/${campaign.id}`} className="font-medium text-foreground hover:text-primary transition-colors">
-                        {campaign.name}
-                      </Link>
-                    </td>
-                    <td className="px-6 py-4 text-muted-foreground">{campaign.client}</td>
-                    <td className="px-6 py-4">
-                      <Badge 
-                        variant="outline" 
-                        className={cn(
-                          "text-[10px] capitalize",
-                          campaign.status === 'active' && "border-green-500 text-green-600 bg-green-50",
-                          campaign.status === 'completed' && "border-blue-500 text-blue-600 bg-blue-50",
-                          campaign.status === 'draft' && "border-gray-400 text-gray-500 bg-gray-50"
-                        )}
-                      >
-                        {campaign.status}
-                      </Badge>
-                    </td>
-                    <td className="text-right px-6 py-4 font-mono font-bold text-foreground">
-                      {campaign.totalViews.toLocaleString()}
-                    </td>
-                    <td className="text-right px-6 py-4 font-mono text-foreground">
-                      {campaign.deliverables}
-                    </td>
-                    {!presentationMode && (
-                      <td className="text-right px-6 py-4 font-mono text-foreground">
-                        ${campaign.spent.toLocaleString()}
-                      </td>
-                    )}
-                    <td className="text-right px-6 py-4">
-                      <Link href={`/campaign/${campaign.id}`}>
-                        <ChevronRight size={14} className="text-muted-foreground hover:text-foreground transition-colors" />
-                      </Link>
-                    </td>
+                {MOCK_CAMPAIGNS.filter(c => c.status === 'active').slice(0, 5).map(c => (
+                  <tr key={c.id} className="border-b border-border/50 hover:bg-secondary/20 transition-colors">
+                    <td className="p-3 text-foreground font-medium">{c.name}</td>
+                    <td className="p-3 text-muted-foreground">{c.client}</td>
+                    <td className="p-3 font-mono">{(c.totalViews / 1000000).toFixed(1)}M</td>
+                    <td className="p-3">{c.deliverables}</td>
                   </tr>
                 ))}
               </tbody>
@@ -163,66 +148,57 @@ export default function AgencyDashboard() {
           </div>
         </div>
 
-        {/* Top Clients */}
-        <div className="bg-card border border-border rounded-xl overflow-hidden">
-          <div className="px-6 py-4 border-b border-border/50">
-            <h3 className="text-sm font-semibold text-foreground">Top Clients</h3>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs">
-              <thead>
-                <tr className="border-b border-border/50 bg-secondary/30">
-                  <th className="text-left px-6 py-3 text-muted-foreground font-medium">Client</th>
-                  <th className="text-right px-6 py-3 text-muted-foreground font-medium">Campaigns</th>
-                  <th className="text-right px-6 py-3 text-muted-foreground font-medium">Total Views</th>
-                  {!presentationMode && <th className="text-right px-6 py-3 text-muted-foreground font-medium">Total Spend</th>}
-                </tr>
-              </thead>
-              <tbody>
-                {TOP_CLIENTS.map((client, idx) => (
-                  <tr key={idx} className="border-b border-border/50 hover:bg-secondary/40 transition-colors">
-                    <td className="px-6 py-4 font-medium text-foreground">{client.name}</td>
-                    <td className="text-right px-6 py-4 font-mono text-foreground">{client.campaigns}</td>
-                    <td className="text-right px-6 py-4 font-mono font-bold text-foreground">{client.views.toLocaleString()}</td>
-                    {!presentationMode && (
-                      <td className="text-right px-6 py-4 font-mono text-foreground">${client.totalSpend.toLocaleString()}</td>
-                    )}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* New Campaign Dialog */}
-        <Dialog open={showNewCampaignDialog} onOpenChange={setShowNewCampaignDialog}>
-          <DialogContent className="bg-card border-border max-w-md">
-            <DialogHeader>
-              <DialogTitle className="text-foreground">Create New Campaign</DialogTitle>
-              <DialogDescription className="text-muted-foreground text-xs">
-                Enter campaign details to get started.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <label className="text-xs font-medium text-muted-foreground block mb-1.5">Campaign Name</label>
-                <Input placeholder="e.g., Q2 Gaming Push" className="h-8 text-xs border-border" />
+        {/* Anomalies & Deadlines Grid */}
+        <div className="grid grid-cols-2 gap-4">
+          {/* Anomalies Widget */}
+          <div className="bg-card border border-border rounded-xl p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <AlertTriangle size={16} className="text-amber-400" />
+              <h3 className="text-sm font-semibold text-foreground">Anomalies to Review</h3>
+              <Badge className="ml-auto bg-amber-500/15 text-amber-400 text-[10px]">2 flagged</Badge>
+            </div>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-xs py-2 border-b border-border/50">
+                <span className="text-foreground font-medium">@SypherPK</span>
+                <span className="text-muted-foreground flex-1">Fortnite Q1</span>
+                <Badge variant="secondary" className="text-[10px]">YouTube</Badge>
+                <span className="font-mono text-amber-400">+284%</span>
               </div>
-              <div>
-                <label className="text-xs font-medium text-muted-foreground block mb-1.5">Client</label>
-                <Input placeholder="e.g., Epic Games" className="h-8 text-xs border-border" />
-              </div>
-              <div>
-                <label className="text-xs font-medium text-muted-foreground block mb-1.5">Total Budget</label>
-                <Input placeholder="e.g., 100000" className="h-8 text-xs border-border" type="number" />
+              <div className="flex items-center gap-2 text-xs py-2">
+                <span className="text-foreground font-medium">@Clix</span>
+                <span className="text-muted-foreground flex-1">Fortnite Q1</span>
+                <Badge variant="secondary" className="text-[10px]">TikTok</Badge>
+                <span className="font-mono text-red-400">-71%</span>
               </div>
             </div>
-            <DialogFooter className="gap-2">
-              <Button variant="outline" size="sm" className="h-7 text-xs border-border">Cancel</Button>
-              <Button size="sm" className="h-7 text-xs bg-primary text-primary-foreground">Create Campaign</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+            <p className="text-[10px] text-muted-foreground mt-3">Outliers are posts exceeding 3× or falling below 0.3× the creator's 30-day average</p>
+          </div>
+
+          {/* Upcoming Deadlines */}
+          <div className="bg-card border border-border rounded-xl p-5">
+            <h3 className="text-sm font-semibold text-foreground mb-4">Upcoming Deadlines</h3>
+            <div className="space-y-0">
+              {[
+                { name: 'Dedicated Video - @Ninja', campaign: 'Fortnite Q1', date: 'Mar 12', overdue: false, days: 2 },
+                { name: 'Stream 12h - @Shroud', campaign: 'Valorant Act III', date: 'Mar 15', overdue: false, days: 5 },
+                { name: 'Sponsorship - @Pokimane', campaign: 'Nike Spring', date: 'Mar 18', overdue: false, days: 8 },
+                { name: 'YouTube Video - @Valkyrae', campaign: 'Epic Games', date: 'Mar 20', overdue: false, days: 10 },
+                { name: 'Integration - @SypherPK', campaign: 'Nike Spring', date: 'Mar 22', overdue: false, days: 12 },
+              ].map((deadline, i) => (
+                <div key={i} className="flex items-center gap-3 py-2 border-b border-border/50 last:border-0">
+                  <div className={cn('w-1 h-8 rounded-full flex-shrink-0', 
+                    deadline.days <= 3 ? 'bg-amber-500' : deadline.days > 8 ? 'bg-emerald-500' : 'bg-amber-500/40'
+                  )} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-foreground truncate">{deadline.name}</p>
+                    <p className="text-[10px] text-muted-foreground">{deadline.campaign}</p>
+                  </div>
+                  <span className="text-xs text-muted-foreground whitespace-nowrap">{deadline.date}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
     </AppShell>
   )

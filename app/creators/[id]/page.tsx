@@ -3,6 +3,7 @@
 import { use } from 'react'
 import { useRouter } from 'next/navigation'
 import { AppShell } from '@/components/app-shell'
+import { useUserRole } from '@/contexts/user-role'
 import { MOCK_CREATORS, MOCK_CAMPAIGNS } from '@/lib/mock-data'
 import { usePresentationMode } from '@/contexts/presentation-mode'
 import {
@@ -78,9 +79,12 @@ function formatCurrency(value: number) {
 export default function CreatorProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const router = useRouter()
+  const { role } = useUserRole()
   const { presentationMode } = usePresentationMode()
   
   const creator = MOCK_CREATORS.find(c => c.id === id)
+  const showFinancial = role === 'super_admin' && !presentationMode
+  const hideAllFinancial = role === 'coordinator' || presentationMode
   
   if (!creator) {
     return (
@@ -215,23 +219,23 @@ export default function CreatorProfilePage({ params }: { params: Promise<{ id: s
             </div>
 
             {/* Financials Card */}
-            <div className="col-span-2 bg-card border border-border rounded-xl p-5">
+            <div className={cn("col-span-2 bg-card border border-border rounded-xl p-5", hideAllFinancial && "opacity-40 pointer-events-none")}>
               <div className="flex items-center gap-2 mb-4">
                 <DollarSign size={14} className="text-primary" />
                 <h3 className="text-sm font-semibold text-foreground">Financials</h3>
               </div>
               
               <div className="grid grid-cols-2 gap-4 mb-4">
-                <div className={cn("p-4 rounded-lg bg-secondary/40", presentationMode && "opacity-40")}>
+                <div className={cn("p-4 rounded-lg bg-secondary/40", (presentationMode || hideAllFinancial) && "opacity-40")}>
                   <p className="text-[10px] text-muted-foreground mb-1">Total Fees Paid</p>
                   <p className="text-xl font-bold font-mono text-foreground">
-                    {presentationMode ? '••••••' : formatCurrency(creator.totalFeesPaid)}
+                    {presentationMode || hideAllFinancial ? '••••••' : formatCurrency(creator.totalFeesPaid)}
                   </p>
                 </div>
-                <div className={cn("p-4 rounded-lg bg-secondary/40", presentationMode && "opacity-40")}>
+                <div className={cn("p-4 rounded-lg bg-secondary/40", (presentationMode || hideAllFinancial) && "opacity-40")}>
                   <p className="text-[10px] text-muted-foreground mb-1">Last Paid Fee</p>
                   <p className="text-xl font-bold font-mono text-foreground">
-                    {presentationMode ? '••••••' : formatCurrency(creator.lastPaidFee)}
+                    {presentationMode || hideAllFinancial ? '••••••' : formatCurrency(creator.lastPaidFee)}
                   </p>
                 </div>
               </div>
@@ -247,7 +251,7 @@ export default function CreatorProfilePage({ params }: { params: Promise<{ id: s
                 <div className="flex-1">
                   <p className={cn("text-xs font-medium", trendConfig.text)}>Fee Trend: {trendConfig.label}</p>
                   <p className="text-[10px] text-muted-foreground">
-                    {presentationMode ? 'Rate history hidden' : `Historical: ${creator.historicalRates.map(r => formatCurrency(r)).join(' → ')}`}
+                    {presentationMode || hideAllFinancial ? 'Rate history hidden' : `Historical: ${creator.historicalRates.map(r => formatCurrency(r)).join(' → ')}`}
                   </p>
                 </div>
               </div>

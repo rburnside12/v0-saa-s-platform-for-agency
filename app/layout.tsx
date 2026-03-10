@@ -3,6 +3,7 @@ import { Inter, JetBrains_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { PresentationModeProvider } from '@/contexts/presentation-mode'
 import { ThemeProvider } from '@/contexts/theme'
+import { UserRoleProvider } from '@/contexts/user-role'
 import './globals.css'
 
 const inter = Inter({
@@ -48,9 +49,11 @@ export default function RootLayout({
       </head>
       <body className={`${inter.variable} ${jetbrainsMono.variable} font-sans antialiased`}>
         <ThemeProvider>
-          <PresentationModeProvider>
-            {children}
-          </PresentationModeProvider>
+          <UserRoleProvider>
+            <PresentationModeProvider>
+              {children}
+            </PresentationModeProvider>
+          </UserRoleProvider>
         </ThemeProvider>
         <Analytics />
       </body>
