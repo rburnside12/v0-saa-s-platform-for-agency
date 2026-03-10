@@ -1054,7 +1054,7 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ id: s
                           <Cell key={`cell-${index}`} fill={entry.color} />
                         ))}
                       </Pie>
-                      <Tooltip formatter={(value) => `${(value as number / 1000000).toFixed(1)}M`} />
+                      <Tooltip formatter={(value) => { const v = value as number; return `${(v / 1000000).toFixed(1)}M` }} />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
