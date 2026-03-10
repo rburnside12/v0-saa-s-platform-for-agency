@@ -1106,7 +1106,7 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ id: s
                     <Tooltip
                       contentStyle={{ backgroundColor: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: '6px' }}
                       labelStyle={{ color: '#1F2937', fontSize: '11px' }}
-                      formatter={(value) => `${(value as number / 1000000).toFixed(1)}M`}
+                      formatter={(value) => { const v = value as number; return `${(v / 1000000).toFixed(1)}M` }}
                     />
                     <Legend wrapperStyle={{ fontSize: '11px' }} />
                     <Bar dataKey="YouTube" fill="#FF0000" stackId="platform" radius={[4, 4, 0, 0]} />
