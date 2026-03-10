@@ -335,14 +335,12 @@ export default function CreatorLibraryPage() {
                       </td>
                       <td className="px-4 py-2.5">
                         <div className="flex gap-1 flex-wrap">
-                          {creator.category.slice(0, 2).map(cat => (
-                            <span key={cat} className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary">
-                              {cat}
-                            </span>
-                          ))}
-                          {creator.category.length > 2 && (
-                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-secondary text-muted-foreground">
-                              +{creator.category.length - 2}
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary">
+                            {creator.category}
+                          </span>
+                          {creator.niche && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-secondary text-muted-foreground truncate max-w-[120px]">
+                              {creator.niche}
                             </span>
                           )}
                         </div>
