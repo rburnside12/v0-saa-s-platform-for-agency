@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, use } from 'react'
 import { AppShell } from '@/components/app-shell'
 import { MOCK_DELIVERABLES, MOCK_CAMPAIGN_ANALYTICS, MOCK_CAMPAIGNS, MOCK_PAYMENTS } from '@/lib/mock-data'
 import { usePresentationMode } from '@/contexts/presentation-mode'
@@ -117,9 +117,10 @@ const PLATFORM_ICONS: Record<string, React.ReactNode> = {
   ),
 }
 
-export default function CampaignDetailPage({ params }: { params: { id: string } }) {
+export default function CampaignDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params)
   const { presentationMode } = usePresentationMode()
-  const campaign = MOCK_CAMPAIGNS.find(c => c.id === params.id) || MOCK_CAMPAIGNS[0]
+  const campaign = MOCK_CAMPAIGNS.find(c => c.id === id) || MOCK_CAMPAIGNS[0]
   const [activeTab, setActiveTab] = useState('overview')
   const [showNewDeliverableDialog, setShowNewDeliverableDialog] = useState(false)
   const [showImportUrlsDialog, setShowImportUrlsDialog] = useState(false)
