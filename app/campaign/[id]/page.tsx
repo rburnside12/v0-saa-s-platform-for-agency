@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import { AppShell } from '@/components/app-shell'
-import { MOCK_DELIVERABLES, MOCK_CAMPAIGN_ANALYTICS, MOCK_CAMPAIGNS } from '@/lib/mock-data'
+import { MOCK_DELIVERABLES, MOCK_CAMPAIGN_ANALYTICS, MOCK_CAMPAIGNS, MOCK_PAYMENTS } from '@/lib/mock-data'
 import { usePresentationMode } from '@/contexts/presentation-mode'
 import { cn } from '@/lib/utils'
 import {
@@ -39,6 +39,7 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import { Switch } from '@/components/ui/switch'
 import {
   Select,
   SelectContent,
@@ -72,6 +73,8 @@ import {
   PieChart,
   Pie,
   Cell,
+  LineChart,
+  Line,
 } from 'recharts'
 import Link from 'next/link'
 import { CampaignReportTab } from '@/components/campaign-report-tab'
@@ -146,6 +149,12 @@ export default function CampaignDetailPage({ params }: { params: { id: string } 
     internalCpm: false,
     externalCpm: true,
   })
+  
+  // Analytics interactive state
+  const [platformFilter, setPlatformFilter] = useState<string>('all')
+  const [analyticsSortOrder, setAnalyticsSortOrder] = useState<'asc' | 'desc'>('desc')
+  const [chartType, setChartType] = useState<'line' | 'bar'>('line')
+  const [showTarget, setShowTarget] = useState(true)
 
   const toggleColumnVisibility = (column: keyof typeof visibleColumns) => {
     setVisibleColumns(prev => ({
@@ -336,12 +345,66 @@ export default function CampaignDetailPage({ params }: { params: { id: string } 
     })
   }, [filteredDeliverables, sortColumn, sortDirection])
 
-  const chartData = [
-    { date: '03.01', YouTube: 1200000, Twitch: 600000, TikTok: 300000, Instagram: 150000 },
-    { date: '03.07', YouTube: 1400000, Twitch: 700000, TikTok: 350000, Instagram: 175000 },
-    { date: '03.13', YouTube: 1680000, Twitch: 840000, TikTok: 420000, Instagram: 210000 },
-    { date: '03.19', YouTube: 1920000, Twitch: 960000, TikTok: 480000, Instagram: 240000 },
-  ]
+  // Get analytics data for this campaign
+  const analytics = MOCK_CAMPAIGN_ANALYTICS[campaign.id] || MOCK_CAMPAIGN_ANALYTICS['epic-games-q1']
+
+  // Process chart data based on platform filter and sort order
+  const chartData = useMemo(() => {
+    let data = analytics.stackedByPlatform ? [...analytics.stackedByPlatform] : []
+    
+    if (platformFilter !== 'all') {
+      data = data.map(d => ({
+        date: d.date,
+        [platformFilter]: d[platformFilter] || 0,
+        target: (analytics.viewsOverTime.find(v => v.date === d.date)?.target) || 0,
+      }))
+    }
+    
+    if (analyticsSortOrder === 'asc') {
+      data = data.reverse()
+    }
+    
+    return data
+  }, [platformFilter, analyticsSortOrder, analytics])
+
+  // Filtered platform data for bar chart
+  const filteredPlatformData = useMemo(() => {
+    let data = [...analytics.byPlatform]
+    if (platformFilter !== 'all') {
+      data = data.filter(d => d.platform === platformFilter)
+    }
+    if (analyticsSortOrder === 'asc') {
+      data = data.sort((a, b) => a.views - b.views)
+    } else {
+      data = data.sort((a, b) => b.views - a.views)
+    }
+    return data
+  }, [platformFilter, analyticsSortOrder, analytics])
+
+  // Filtered content type data for pie
+  const filteredContentTypeData = useMemo(() => {
+    let data = [...analytics.byContentType]
+    if (analyticsSortOrder === 'asc') {
+      data = data.sort((a, b) => a.views - b.views)
+    } else {
+      data = data.sort((a, b) => b.views - a.views)
+    }
+    return data
+  }, [analyticsSortOrder, analytics])
+
+  // Filtered top performers
+  const filteredTopPerformers = useMemo(() => {
+    let data = [...analytics.topPerformers]
+    if (platformFilter !== 'all') {
+      data = data.filter(p => p.platform === platformFilter)
+    }
+    if (analyticsSortOrder === 'asc') {
+      data = data.sort((a, b) => (a.views || a.ccv || 0) - (b.views || b.ccv || 0))
+    } else {
+      data = data.sort((a, b) => (b.views || b.ccv || 0) - (a.views || a.ccv || 0))
+    }
+    return data
+  }, [platformFilter, analyticsSortOrder, analytics])
 
   // Pie chart data for Analytics
   const topCreatorsData = [
@@ -826,153 +889,217 @@ export default function CampaignDetailPage({ params }: { params: { id: string } 
           {/* ANALYTICS TAB */}
           {activeTab === 'analytics' && (
             <div className="space-y-6">
-              {/* Top Row: 3 Cards */}
-              <div className="grid grid-cols-3 gap-4">
-                {/* Top Creators */}
-                <div className="bg-card border border-border rounded-xl p-5">
-                  <h2 className="text-sm font-semibold text-foreground mb-4">Top Creators</h2>
-                  <div className="flex items-center gap-4">
-                    <ResponsiveContainer width="45%" height={160}>
-                      <PieChart>
-                        <Pie
-                          data={topCreatorsData}
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={40}
-                          outerRadius={60}
-                          dataKey="value"
-                          paddingAngle={2}
-                        >
-                          {topCreatorsData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
-                          ))}
-                        </Pie>
-                        <Tooltip formatter={(value) => `${(value as number / 1000).toFixed(0)}K views`} />
-                      </PieChart>
-                    </ResponsiveContainer>
-                    <div className="flex-1 space-y-1.5">
-                      {topCreatorsData.map((item, idx) => (
-                        <div key={idx} className="flex items-center justify-between text-xs">
-                          <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }} />
-                            <span className="text-foreground">{item.name}</span>
-                          </div>
-                          <span className="font-mono text-muted-foreground">{(item.value / 1000).toFixed(0)}K</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
+              {/* Filter and Control Bar */}
+              <div className="flex items-center gap-2 bg-card border border-border rounded-xl p-4 flex-wrap">
+                {/* Platform Filter Buttons */}
+                <Button
+                  variant={platformFilter === 'all' ? 'default' : 'outline'}
+                  size="sm"
+                  className="h-7 text-xs"
+                  onClick={() => setPlatformFilter('all')}
+                >
+                  All
+                </Button>
+                {campaign.platforms?.map((platform) => (
+                  <Button
+                    key={platform}
+                    variant={platformFilter === platform ? 'default' : 'outline'}
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={() => setPlatformFilter(platform)}
+                  >
+                    {platform}
+                  </Button>
+                ))}
 
-                {/* Views Breakdown */}
-                <div className="bg-card border border-border rounded-xl p-5">
-                  <h2 className="text-sm font-semibold text-foreground mb-4">Views Breakdown</h2>
-                  <div className="flex items-center gap-4">
-                    <ResponsiveContainer width="45%" height={160}>
-                      <PieChart>
-                        <Pie
-                          data={viewsBreakdownData}
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={40}
-                          outerRadius={60}
-                          dataKey="value"
-                          paddingAngle={2}
-                        >
-                          {viewsBreakdownData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
-                          ))}
-                        </Pie>
-                        <Tooltip formatter={(value) => `${(value as number / 1000000).toFixed(2)}M views`} />
-                      </PieChart>
-                    </ResponsiveContainer>
-                    <div className="flex-1 space-y-1.5">
-                      {viewsBreakdownData.map((item, idx) => (
-                        <div key={idx} className="flex items-center justify-between text-xs">
-                          <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }} />
-                            <span className="text-foreground">{item.name}</span>
-                          </div>
-                          <span className="font-mono text-muted-foreground">{(item.value / 1000000).toFixed(2)}M</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
+                {/* Separator */}
+                <div className="w-px h-5 bg-border" />
 
-                {/* Cost / CPM Breakdown */}
-                <div className={cn("bg-card border border-border rounded-xl p-5", presentationMode && "opacity-40")}>
-                  <h2 className="text-sm font-semibold text-foreground mb-4">Cost Breakdown</h2>
-                  <div className="flex items-center gap-4">
-                    <ResponsiveContainer width="45%" height={160}>
-                      <PieChart>
-                        <Pie
-                          data={costBreakdownData}
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={40}
-                          outerRadius={60}
-                          dataKey="value"
-                          paddingAngle={2}
-                        >
-                          {costBreakdownData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
-                          ))}
-                        </Pie>
-                        <Tooltip formatter={(value) => presentationMode ? '••••' : `$${(value as number).toLocaleString()}`} />
-                      </PieChart>
-                    </ResponsiveContainer>
-                    <div className="flex-1 space-y-1.5">
-                      {costBreakdownData.map((item, idx) => (
-                        <div key={idx} className="flex items-center justify-between text-xs">
-                          <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }} />
-                            <span className="text-foreground">{item.name}</span>
-                          </div>
-                          <span className="font-mono text-muted-foreground">
-                            {presentationMode ? '••••' : `$${(item.value / 1000).toFixed(0)}K`}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+                {/* Sort Toggle */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 text-xs"
+                  onClick={() => setAnalyticsSortOrder(analyticsSortOrder === 'desc' ? 'asc' : 'desc')}
+                >
+                  {analyticsSortOrder === 'desc' ? '↓ Descending' : '↑ Ascending'}
+                </Button>
+
+                {/* Chart Type Toggle */}
+                <Button
+                  variant={chartType === 'line' ? 'default' : 'outline'}
+                  size="sm"
+                  className="h-7 text-xs"
+                  onClick={() => setChartType('line')}
+                >
+                  Line
+                </Button>
+                <Button
+                  variant={chartType === 'bar' ? 'default' : 'outline'}
+                  size="sm"
+                  className="h-7 text-xs"
+                  onClick={() => setChartType('bar')}
+                >
+                  Bar
+                </Button>
+
+                {/* Show Target Toggle */}
+                <div className="flex items-center gap-2 ml-auto">
+                  <span className="text-xs text-muted-foreground">Show Target</span>
+                  <Switch checked={showTarget} onCheckedChange={setShowTarget} />
                 </div>
               </div>
 
-              {/* Top Performing Posts - Line Items */}
+              {/* Chart 1: Views Over Time */}
               <div className="bg-card border border-border rounded-xl p-5">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-sm font-semibold text-foreground">Top Performing Posts</h2>
-                  <Trophy size={16} className="text-primary" />
+                <h2 className="text-sm font-semibold text-foreground mb-1">Views Over Time</h2>
+                <p className="text-xs text-muted-foreground mb-4">
+                  {platformFilter === 'all' ? 'All platforms' : `${platformFilter} only`}
+                </p>
+                <ResponsiveContainer width="100%" height={220}>
+                  {chartType === 'line' ? (
+                    <LineChart data={chartData} margin={{ top: 10, right: 20, left: 0, bottom: 20 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                      <XAxis dataKey="date" tick={{ fontSize: 10 }} />
+                      <YAxis tick={{ fontSize: 10 }} />
+                      <Tooltip formatter={(value) => `${(value as number / 1000000).toFixed(1)}M`} />
+                      {platformFilter === 'all' && campaign.platforms?.map((platform, i) => (
+                        <Line
+                          key={platform}
+                          type="monotone"
+                          dataKey={platform}
+                          stroke={['#FF0000', '#9146FF', '#69C9D0', '#E1306C'][i % 4]}
+                          strokeWidth={2}
+                          dot={false}
+                        />
+                      ))}
+                      {platformFilter !== 'all' && (
+                        <Line
+                          type="monotone"
+                          dataKey={platformFilter}
+                          stroke="var(--primary)"
+                          strokeWidth={2}
+                          dot={false}
+                        />
+                      )}
+                      {showTarget && (
+                        <Line
+                          type="monotone"
+                          dataKey="target"
+                          stroke="#999"
+                          strokeWidth={1}
+                          strokeDasharray="5 5"
+                          dot={false}
+                        />
+                      )}
+                    </LineChart>
+                  ) : (
+                    <BarChart data={chartData} margin={{ top: 10, right: 20, left: 0, bottom: 20 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                      <XAxis dataKey="date" tick={{ fontSize: 10 }} />
+                      <YAxis tick={{ fontSize: 10 }} />
+                      <Tooltip formatter={(value) => `${(value as number / 1000000).toFixed(1)}M`} />
+                      {platformFilter === 'all' && campaign.platforms?.map((platform, i) => (
+                        <Bar
+                          key={platform}
+                          dataKey={platform}
+                          fill={['#FF0000', '#9146FF', '#69C9D0', '#E1306C'][i % 4]}
+                          radius={[3, 3, 0, 0]}
+                        />
+                      ))}
+                      {platformFilter !== 'all' && (
+                        <Bar
+                          dataKey={platformFilter}
+                          fill="var(--primary)"
+                          radius={[3, 3, 0, 0]}
+                        />
+                      )}
+                    </BarChart>
+                  )}
+                </ResponsiveContainer>
+              </div>
+
+              {/* Charts Row: Views by Platform + Content Type */}
+              <div className="grid grid-cols-2 gap-4">
+                {/* Chart 2: Views by Platform */}
+                <div className="bg-card border border-border rounded-xl p-5">
+                  <h2 className="text-sm font-semibold text-foreground mb-4">Views by Platform</h2>
+                  <ResponsiveContainer width="100%" height={180}>
+                    <BarChart data={filteredPlatformData} layout="vertical" margin={{ top: 5, right: 20, left: 70, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                      <XAxis type="number" tick={{ fontSize: 10 }} />
+                      <YAxis dataKey="platform" type="category" width={70} tick={{ fontSize: 10 }} />
+                      <Tooltip formatter={(value) => `${value >= 1000000 ? `${(value as number / 1000000).toFixed(1)}M` : `${(value as number / 1000).toFixed(0)}K`} views`} />
+                      <Bar dataKey="views" fill="var(--primary)" radius={[0, 3, 3, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
                 </div>
-                <div className="space-y-3">
-                  {topPostsData.map((post, idx) => (
-                    <div key={idx} className="flex items-center gap-4 p-3 rounded-lg bg-secondary/30 hover:bg-secondary/50 transition-colors">
-                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                        <span className="text-primary text-xs font-bold">#{post.rank}</span>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <p className="text-sm font-medium text-foreground">{post.creator}</p>
-                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-secondary text-muted-foreground">{post.platform}</span>
-                        </div>
-                        <p className="text-xs text-muted-foreground">{post.type}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm font-bold font-mono text-foreground">{(post.views / 1000).toFixed(0)}K</p>
-                        <p className="text-[10px] text-muted-foreground">{post.er}% ER</p>
-                      </div>
-                    </div>
-                  ))}
+
+                {/* Chart 3: Views by Content Type */}
+                <div className="bg-card border border-border rounded-xl p-5">
+                  <h2 className="text-sm font-semibold text-foreground mb-4">Views by Content Type</h2>
+                  <ResponsiveContainer width="100%" height={180}>
+                    <PieChart>
+                      <Pie
+                        data={filteredContentTypeData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={40}
+                        outerRadius={70}
+                        dataKey="views"
+                        label={{ fontSize: 9 }}
+                      >
+                        {filteredContentTypeData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(value) => `${(value as number / 1000000).toFixed(1)}M`} />
+                    </PieChart>
+                  </ResponsiveContainer>
                 </div>
               </div>
 
-              {/* Performance Over Time Chart - Moved to bottom */}
-              <div className="bg-card border border-border rounded-xl p-5">
-                <h2 className="text-sm font-semibold text-foreground mb-5">Performance Over Time</h2>
-                <ResponsiveContainer width="100%" height={280}>
-                  <BarChart data={chartData} margin={{ top: 10, right: 20, left: 0, bottom: 20 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false} />
+              {/* Top Performers Table */}
+              <div className="bg-card border border-border rounded-xl overflow-hidden">
+                <div className="p-5 border-b border-border/50">
+                  <h2 className="text-sm font-semibold text-foreground">Top Performers</h2>
+                </div>
+                <div className="divide-y divide-border/50">
+                  {filteredTopPerformers.length > 0 ? (
+                    filteredTopPerformers.map((performer, idx) => (
+                      <div key={idx} className="p-4 flex items-center justify-between text-xs hover:bg-secondary/20">
+                        <div className="flex-1">
+                          <p className="text-foreground font-medium">{performer.creator}</p>
+                          <div className="flex gap-2 mt-1">
+                            <Badge variant="secondary" className="text-[10px] px-1.5 py-0.5">
+                              {performer.platform}
+                            </Badge>
+                            <span className="text-muted-foreground">{performer.badge}</span>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-mono font-bold text-foreground">
+                            {performer.ccv ? `${(performer.ccv / 1000).toFixed(0)}K CCV` : `${(performer.views / 1000000).toFixed(1)}M views`}
+                          </p>
+                          <p className="text-muted-foreground">{performer.er}% ER</p>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="p-4 text-xs text-muted-foreground">No performers for selected platform</div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Old chart reference removed - replaced above */}
+          {false && (
+            <div className="bg-card border border-border rounded-xl p-5">
+              <h2 className="text-sm font-semibold text-foreground mb-5">Performance Over Time</h2>
+              <ResponsiveContainer width="100%" height={280}>
+                <BarChart data={[]} margin={{ top: 10, right: 20, left: 0, bottom: 20 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false} />
                     <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#6B7280' }} />
                     <YAxis tick={{ fontSize: 10, fill: '#6B7280' }} />
                     <Tooltip
