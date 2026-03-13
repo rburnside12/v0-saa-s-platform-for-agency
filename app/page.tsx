@@ -248,78 +248,6 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Instagram Carousel Section */}
-        <div className="bg-card border border-border rounded-xl p-5">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <Instagram size={18} className="text-pink-500" />
-              <h2 className="text-sm font-semibold text-foreground">@cherrypicktalent</h2>
-              <Badge variant="secondary" className="text-[10px]">Instagram</Badge>
-            </div>
-            <a 
-              href="https://www.instagram.com/cherrypicktalent/" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
-            >
-              View Profile <ExternalLink size={10} />
-            </a>
-          </div>
-
-          {/* Carousel */}
-          <div className="relative">
-            <div className="overflow-hidden">
-              <div 
-                className="flex gap-4 transition-transform duration-300 ease-out"
-                style={{ transform: `translateX(-${carouselIndex * (100 / 3 + 1.33)}%)` }}
-              >
-                {INSTAGRAM_POSTS.map((post) => (
-                  <div 
-                    key={post.id} 
-                    className="flex-shrink-0 w-[calc(33.333%-11px)] aspect-square rounded-lg bg-secondary/50 overflow-hidden group cursor-pointer relative"
-                  >
-                    {/* Placeholder gradient background */}
-                    <div className={cn(
-                      "w-full h-full",
-                      post.id % 3 === 0 ? "bg-gradient-to-br from-pink-500/20 to-purple-500/20" :
-                      post.id % 3 === 1 ? "bg-gradient-to-br from-blue-500/20 to-cyan-500/20" :
-                      "bg-gradient-to-br from-orange-500/20 to-red-500/20"
-                    )} />
-                    
-                    {/* Overlay on hover */}
-                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
-                      <div className="flex items-center gap-4 text-white text-sm">
-                        <span className="flex items-center gap-1">
-                          <Heart size={16} fill="white" /> {post.likes.toLocaleString()}
-                        </span>
-                      </div>
-                      <p className="text-white/80 text-xs px-4 text-center line-clamp-2">{post.caption}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Carousel Navigation */}
-            {carouselIndex > 0 && (
-              <button
-                onClick={() => scrollCarousel('left')}
-                className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-background/90 border border-border flex items-center justify-center hover:bg-background transition-colors"
-              >
-                <ChevronLeft size={16} />
-              </button>
-            )}
-            {carouselIndex < INSTAGRAM_POSTS.length - 3 && (
-              <button
-                onClick={() => scrollCarousel('right')}
-                className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-background/90 border border-border flex items-center justify-center hover:bg-background transition-colors"
-              >
-                <ChevronRight size={16} />
-              </button>
-            )}
-          </div>
-        </div>
-
         {/* Two Column Layout: Videos + Creators/News */}
         <div className="grid grid-cols-3 gap-6">
           {/* Left: Videos Gone Live This Week (2 cols) */}
@@ -492,7 +420,7 @@ export default function HomePage() {
         </div>
 
         {/* Quick Stats Row */}
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-4 gap-4" id="quick-stats">
           <div className="bg-card border border-border rounded-xl p-4">
             <p className="text-[10px] text-muted-foreground mb-1">Active Campaigns</p>
             <p className="text-xl font-bold font-mono">
@@ -516,6 +444,73 @@ export default function HomePage() {
             </p>
           </div>
         </div>
+        {/* Instagram Feed */}
+        <div className="bg-card border border-border rounded-xl p-5">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Instagram size={18} className="text-pink-500" />
+              <h2 className="text-sm font-semibold text-foreground">@cherrypicktalent</h2>
+              <Badge variant="secondary" className="text-[10px]">Instagram</Badge>
+            </div>
+            <a
+              href="https://www.instagram.com/cherrypicktalent/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
+            >
+              View Profile <ExternalLink size={10} />
+            </a>
+          </div>
+
+          <div className="relative">
+            <div className="overflow-hidden">
+              <div
+                className="flex gap-4 transition-transform duration-300 ease-out"
+                style={{ transform: `translateX(-${carouselIndex * (100 / 3 + 1.33)}%)` }}
+              >
+                {INSTAGRAM_POSTS.map((post) => (
+                  <div
+                    key={post.id}
+                    className="flex-shrink-0 w-[calc(33.333%-11px)] aspect-square rounded-lg bg-secondary/50 overflow-hidden group cursor-pointer relative"
+                  >
+                    <div className={cn(
+                      "w-full h-full",
+                      post.id % 3 === 0 ? "bg-gradient-to-br from-pink-500/20 to-purple-500/20" :
+                      post.id % 3 === 1 ? "bg-gradient-to-br from-blue-500/20 to-cyan-500/20" :
+                      "bg-gradient-to-br from-orange-500/20 to-red-500/20"
+                    )} />
+                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
+                      <div className="flex items-center gap-4 text-white text-sm">
+                        <span className="flex items-center gap-1">
+                          <Heart size={16} fill="white" /> {post.likes.toLocaleString()}
+                        </span>
+                      </div>
+                      <p className="text-white/80 text-xs px-4 text-center line-clamp-2">{post.caption}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {carouselIndex > 0 && (
+              <button
+                onClick={() => scrollCarousel('left')}
+                className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-background/90 border border-border flex items-center justify-center hover:bg-background transition-colors"
+              >
+                <ChevronLeft size={16} />
+              </button>
+            )}
+            {carouselIndex < INSTAGRAM_POSTS.length - 3 && (
+              <button
+                onClick={() => scrollCarousel('right')}
+                className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-background/90 border border-border flex items-center justify-center hover:bg-background transition-colors"
+              >
+                <ChevronRight size={16} />
+              </button>
+            )}
+          </div>
+        </div>
+
       </div>
     </AppShell>
   )
