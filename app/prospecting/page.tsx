@@ -123,10 +123,13 @@ function MasterListsView({ onSelectList }: { onSelectList: (listId: string) => v
       {/* Lists Grid */}
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredLists.map(list => (
-          <button
+          <div
             key={list.id}
+            role="button"
+            tabIndex={0}
             onClick={() => onSelectList(list.id)}
-            className="bg-card border border-border rounded-lg p-4 text-left hover:border-primary/50 hover:bg-secondary/30 transition-all group"
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onSelectList(list.id) }}
+            className="bg-card border border-border rounded-lg p-4 text-left hover:border-primary/50 hover:bg-secondary/30 transition-all group cursor-pointer"
           >
             <div className="flex items-start justify-between gap-2 mb-3">
               <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
@@ -169,7 +172,7 @@ function MasterListsView({ onSelectList }: { onSelectList: (listId: string) => v
                 <PlatformBadge key={p} platform={p} />
               ))}
             </div>
-          </button>
+          </div>
         ))}
       </div>
 

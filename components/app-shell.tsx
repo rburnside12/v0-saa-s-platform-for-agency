@@ -6,7 +6,12 @@ import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard,
   Megaphone,
+  FileText,
   List,
+  BarChart3,
+  Users,
+  Building2,
+  DollarSign,
   Settings,
   Menu,
   X,
@@ -17,13 +22,14 @@ import {
   User,
   ChevronDown,
   Search,
-  AlertCircle,
   BookOpen,
   Bell,
+  Lock,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { usePresentationMode } from '@/contexts/presentation-mode'
 import { useTheme } from '@/contexts/theme'
+import { useUserRole } from '@/contexts/user-role'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -42,15 +48,24 @@ import {
   CommandList,
   CommandSeparator,
 } from '@/components/ui/command'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 import { useRouter } from 'next/navigation'
 import { MOCK_CAMPAIGNS, MOCK_CREATORS } from '@/lib/mock-data'
 
 const navItems = [
-  { href: '/', label: 'Overview', icon: LayoutDashboard },
-  { href: '/creators', label: 'Creator Library', icon: User },
+  { href: '/', label: 'Home', icon: LayoutDashboard },
   { href: '/campaigns', label: 'Campaigns', icon: Megaphone },
-  { href: '/prospecting', label: 'List Builder', icon: List },
-  { href: '/anomalies', label: 'Anomalies', icon: AlertCircle },
+  { href: '/briefs', label: 'New Brief', icon: FileText },
+  { href: '/prospecting', label: 'Talent Lists', icon: List },
+  { href: '/reporting', label: 'Reporting', icon: BarChart3 },
+  { href: '/creators', label: 'Creators', icon: Users },
+  { href: '/clients', label: 'Clients', icon: Building2 },
+  { href: '/finance', label: 'Finance', icon: DollarSign },
   { href: '/settings', label: 'Settings', icon: Settings },
 ]
 
@@ -64,6 +79,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const { presentationMode, setPresentationMode } = usePresentationMode()
   const { theme, toggleTheme } = useTheme()
+  const { role } = useUserRole()
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [commandOpen, setCommandOpen] = useState(false)
 
@@ -144,6 +160,25 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <nav className="flex-1 overflow-y-auto py-2 px-2">
           {navItems.map(({ href, label, icon: Icon }) => {
             const isActive = pathname === href || (href !== '/' && pathname.startsWith(href))
+            const isFinance = href === '/finance'
+            const isLocked = isFinance && role !== 'super_admin'
+
+            if (isLocked) {
+              return (
+                <TooltipProvider key={href}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-xs text-muted-foreground/40 cursor-not-allowed opacity-50 mb-0.5">
+                        <Lock size={13} className="shrink-0" />
+                        {sidebarOpen && <span className="truncate">{label}</span>}
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent>Finance access restricted to Super Admin</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )
+            }
+
             return (
               <Link
                 key={href}
@@ -316,6 +351,21 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 }`}>
                   {campaign.status}
                 </span>
+              </CommandItem>
+            ))}
+          </CommandGroup>
+
+          <CommandSeparator />
+
+          <CommandGroup heading="Clients">
+            {['Epic Games', 'Riot Games', 'Nike', 'AMD'].map((client) => (
+              <CommandItem
+                key={client}
+                onSelect={() => runCommand(() => router.push(`/clients/${client.toLowerCase().replace(/\s+/g, '-')}`))}
+                className="gap-2"
+              >
+                <Building2 size={14} className="text-muted-foreground" />
+                <span>{client}</span>
               </CommandItem>
             ))}
           </CommandGroup>
